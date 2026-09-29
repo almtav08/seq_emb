@@ -1,0 +1,42 @@
+# Global experiment settings
+seed: 42
+device: "auto"
+max_seq_len: 225
+embedding_dim: 150
+n_splits: 5
+num_epochs: 500
+batch_size: 4
+top_k: 10
+intervention_steps: 3
+
+# Paths relative to project root
+paths:
+  data_dir: "data"
+  results_dir: "results"
+
+# Default model architectures
+models:
+  caser:
+    num_vert_filters: 8
+    num_hori_filters: 2
+    hori_filter_sizes: [2, 3, 4]
+    dropout: 0.2
+    pooling: "last"
+    optimizer: "adagrad"
+    lr: 0.00001
+
+  grurec:
+    hidden_dim: 16
+    num_layers: 10
+    dropout: 0.2
+    pooling: "mean"
+    optimizer: "adam"
+    lr: 0.0001
+
+  sasrec:
+    num_heads: 10
+    num_layers: 10
+    dropout: 0.15
+    pooling: "last"
+    optimizer: "adam"
+    lr: 0.0001

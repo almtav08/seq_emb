@@ -1,0 +1,734 @@
+[
+    {
+        "id": 0,
+        "recid": 0,
+        "name": "Curso Consolas y Dispositivos de Videojuegos",
+        "type": "course"
+    },
+    {
+        "id": 1,
+        "recid": 1,
+        "name": "Presentación y normas de la asignatura",
+        "type": "page"
+    },
+    {
+        "id": 2,
+        "recid": 2,
+        "name": "Curso \"From Nand to Tetris\"",
+        "type": "page"
+    },
+    {
+        "id": 3,
+        "recid": 3,
+        "name": "nandgame",
+        "type": "page"
+    },
+    {
+        "id": 4,
+        "recid": 4,
+        "name": "Diapositivas Álgebra Boole",
+        "type": "page"
+    },
+    {
+        "id": 5,
+        "recid": 5,
+        "name": "Instrucciones entregable laboratorio 1",
+        "type": "page"
+    },
+    {
+        "id": 6,
+        "recid": 6,
+        "name": "Paquete herramientas nand2tetris.zip",
+        "type": "page"
+    },
+    {
+        "id": 7,
+        "recid": 7,
+        "name": "Álgebra de Boole I",
+        "type": "page"
+    },
+    {
+        "id": 8,
+        "recid": 8,
+        "name": "Entregable teoría 1",
+        "type": "page"
+    },
+    {
+        "id": 9,
+        "recid": 9,
+        "name": "Álgebra de Boole II",
+        "type": "page"
+    },
+    {
+        "id": 10,
+        "recid": 10,
+        "name": "Álgebra de Boole III",
+        "type": "page"
+    },
+    {
+        "id": 11,
+        "recid": 11,
+        "name": "Álgebra de Boole IV",
+        "type": "page"
+    },
+    {
+        "id": 12,
+        "recid": 12,
+        "name": "C1: Introducción a la consola NDS",
+        "type": "page"
+    },
+    {
+        "id": 13,
+        "recid": 13,
+        "name": "C2: Herramientas para programar la NDS",
+        "type": "page"
+    },
+    {
+        "id": 14,
+        "recid": 14,
+        "name": "C3: Fundamentos para programar la NDS",
+        "type": "page"
+    },
+    {
+        "id": 15,
+        "recid": 15,
+        "name": "Programas c2.zip",
+        "type": "page"
+    },
+    {
+        "id": 16,
+        "recid": 16,
+        "name": "C4: Juego sin gráficos en la NDS",
+        "type": "page"
+    },
+    {
+        "id": 17,
+        "recid": 17,
+        "name": "Programas c3.zip",
+        "type": "page"
+    },
+    {
+        "id": 18,
+        "recid": 18,
+        "name": "Programas c4.c",
+        "type": "page"
+    },
+    {
+        "id": 19,
+        "recid": 19,
+        "name": "Entregable laboratorio 1",
+        "type": "page"
+    },
+    {
+        "id": 20,
+        "recid": 20,
+        "name": "Nomenglatura puertas lógicas",
+        "type": "page"
+    },
+    {
+        "id": 21,
+        "recid": 21,
+        "name": "Instrucciones entregable laboratorio 2",
+        "type": "page"
+    },
+    {
+        "id": 22,
+        "recid": 22,
+        "name": "Diapositivas Puertas Lógicas",
+        "type": "page"
+    },
+    {
+        "id": 23,
+        "recid": 23,
+        "name": "Puertas lógicas I",
+        "type": "page"
+    },
+    {
+        "id": 24,
+        "recid": 24,
+        "name": "Entregable teoría 2",
+        "type": "page"
+    },
+    {
+        "id": 25,
+        "recid": 25,
+        "name": "Puertas lógicas II",
+        "type": "page"
+    },
+    {
+        "id": 26,
+        "recid": 26,
+        "name": "Puertas lógicas III",
+        "type": "page"
+    },
+    {
+        "id": 27,
+        "recid": 27,
+        "name": "Puertas lógicas IV",
+        "type": "page"
+    },
+    {
+        "id": 28,
+        "recid": 28,
+        "name": "Puertas lógicas V",
+        "type": "page"
+    },
+    {
+        "id": 29,
+        "recid": 29,
+        "name": "Entregable laboratorio 2",
+        "type": "page"
+    },
+    {
+        "id": 30,
+        "recid": 30,
+        "name": "Código inicial del laboratorio 2 (zip)",
+        "type": "page"
+    },
+    {
+        "id": 31,
+        "recid": 31,
+        "name": "NDS del programa del laboratorio 2",
+        "type": "page"
+    },
+    {
+        "id": 32,
+        "recid": 32,
+        "name": "Instrucciones laboratorio 3",
+        "type": "page"
+    },
+    {
+        "id": 33,
+        "recid": 33,
+        "name": "Puertas lógicas VI",
+        "type": "page"
+    },
+    {
+        "id": 34,
+        "recid": 34,
+        "name": "Puertas lógicas VII",
+        "type": "page"
+    },
+    {
+        "id": 35,
+        "recid": 35,
+        "name": "Puertas lógicas VIII",
+        "type": "page"
+    },
+    {
+        "id": 36,
+        "recid": 36,
+        "name": "Entregable teoría 3",
+        "type": "page"
+    },
+    {
+        "id": 37,
+        "recid": 37,
+        "name": "Entregable laboratorio 3",
+        "type": "page"
+    },
+    {
+        "id": 38,
+        "recid": 38,
+        "name": "Código inicial del laboratorio 3 (zip)",
+        "type": "page"
+    },
+    {
+        "id": 39,
+        "recid": 39,
+        "name": "NDS del código inicial para el laboratorio 3",
+        "type": "page"
+    },
+    {
+        "id": 40,
+        "recid": 40,
+        "name": "Instrucciones laboratorio 4",
+        "type": "page"
+    },
+    {
+        "id": 41,
+        "recid": 41,
+        "name": "Diapositivas ALU",
+        "type": "page"
+    },
+    {
+        "id": 42,
+        "recid": 42,
+        "name": "Codificacion Información",
+        "type": "page"
+    },
+    {
+        "id": 43,
+        "recid": 43,
+        "name": "Entregable teoría 4",
+        "type": "page"
+    },
+    {
+        "id": 44,
+        "recid": 44,
+        "name": "Aritmética Booleana I",
+        "type": "page"
+    },
+    {
+        "id": 45,
+        "recid": 45,
+        "name": "Playlist sobre codificación de la información",
+        "type": "page"
+    },
+    {
+        "id": 46,
+        "recid": 46,
+        "name": "Aritmética Booleana II",
+        "type": "page"
+    },
+    {
+        "id": 47,
+        "recid": 47,
+        "name": "Aritmética Booleana III",
+        "type": "page"
+    },
+    {
+        "id": 48,
+        "recid": 48,
+        "name": "Aritmética Booleana IV",
+        "type": "page"
+    },
+    {
+        "id": 49,
+        "recid": 49,
+        "name": "Aritmética Booleana V",
+        "type": "page"
+    },
+    {
+        "id": 50,
+        "recid": 50,
+        "name": "C5: El sistema de memoria gráfica de la NDS",
+        "type": "page"
+    },
+    {
+        "id": 51,
+        "recid": 51,
+        "name": "Entregable laboratorio 4",
+        "type": "page"
+    },
+    {
+        "id": 52,
+        "recid": 52,
+        "name": "Códigos para el laboratorio 4 (zip)",
+        "type": "page"
+    },
+    {
+        "id": 53,
+        "recid": 53,
+        "name": "Insertar imágenes para la NDS en modo framebuffer",
+        "type": "page"
+    },
+    {
+        "id": 54,
+        "recid": 54,
+        "name": "C6: El modo framebuffer de la NDS",
+        "type": "page"
+    },
+    {
+        "id": 55,
+        "recid": 55,
+        "name": "Notas: Insertar imágenes en modo framebuffer de la NDS",
+        "type": "page"
+    },
+    {
+        "id": 56,
+        "recid": 56,
+        "name": "programas c6.zip",
+        "type": "page"
+    },
+    {
+        "id": 57,
+        "recid": 57,
+        "name": "Diapositivas memorias de computadores",
+        "type": "page"
+    },
+    {
+        "id": 58,
+        "recid": 58,
+        "name": "Instrucciones entregable laboratorio 5",
+        "type": "page"
+    },
+    {
+        "id": 59,
+        "recid": 59,
+        "name": "Vídeo memorias de computadores I",
+        "type": "page"
+    },
+    {
+        "id": 60,
+        "recid": 60,
+        "name": "Entregable teoría 5",
+        "type": "page"
+    },
+    {
+        "id": 61,
+        "recid": 61,
+        "name": "Vídeo memorias de computadores II",
+        "type": "page"
+    },
+    {
+        "id": 62,
+        "recid": 62,
+        "name": "Vídeo memorias de computadores III",
+        "type": "page"
+    },
+    {
+        "id": 63,
+        "recid": 63,
+        "name": "Entregable laboratorio 5",
+        "type": "page"
+    },
+    {
+        "id": 64,
+        "recid": 64,
+        "name": "Vídeo memorias de computadores IV",
+        "type": "page"
+    },
+    {
+        "id": 65,
+        "recid": 65,
+        "name": "Instrucciones entregable laboratorio 6",
+        "type": "page"
+    },
+    {
+        "id": 66,
+        "recid": 66,
+        "name": "Entregable teoría 6",
+        "type": "page"
+    },
+    {
+        "id": 67,
+        "recid": 67,
+        "name": "Entregable laboratorio 6",
+        "type": "page"
+    },
+    {
+        "id": 68,
+        "recid": 68,
+        "name": "C7: El modo teselado de la NDS",
+        "type": "page"
+    },
+    {
+        "id": 69,
+        "recid": 69,
+        "name": "Programas c7.zip",
+        "type": "page"
+    },
+    {
+        "id": 70,
+        "recid": 70,
+        "name": "El lenguaje máquina Hack (capítulo del libro)",
+        "type": "page"
+    },
+    {
+        "id": 71,
+        "recid": 71,
+        "name": "Instrucciones entregable laboratorio 7",
+        "type": "page"
+    },
+    {
+        "id": 72,
+        "recid": 72,
+        "name": "El lenguaje máquina Hack (traspas de los autores del libro)",
+        "type": "page"
+    },
+    {
+        "id": 73,
+        "recid": 73,
+        "name": "Tabla resumen ensamblador-lenguaje máquina",
+        "type": "page"
+    },
+    {
+        "id": 74,
+        "recid": 74,
+        "name": "suma2numeros.asm",
+        "type": "page"
+    },
+    {
+        "id": 75,
+        "recid": 75,
+        "name": "suma2numeros.hack",
+        "type": "page"
+    },
+    {
+        "id": 76,
+        "recid": 76,
+        "name": "Vídeo lenguaje hack I",
+        "type": "page"
+    },
+    {
+        "id": 77,
+        "recid": 77,
+        "name": "suma3numerosMem.asm",
+        "type": "page"
+    },
+    {
+        "id": 78,
+        "recid": 78,
+        "name": "suma3numerosMem.hack",
+        "type": "page"
+    },
+    {
+        "id": 79,
+        "recid": 79,
+        "name": "maximo2numeros.asm",
+        "type": "page"
+    },
+    {
+        "id": 80,
+        "recid": 80,
+        "name": "maximo2numeros.hack",
+        "type": "page"
+    },
+    {
+        "id": 81,
+        "recid": 81,
+        "name": "Vídeo lenguaje hack II",
+        "type": "page"
+    },
+    {
+        "id": 82,
+        "recid": 82,
+        "name": "Entregable teoría 7",
+        "type": "page"
+    },
+    {
+        "id": 83,
+        "recid": 83,
+        "name": "Entregable laboratorio 7",
+        "type": "page"
+    },
+    {
+        "id": 84,
+        "recid": 84,
+        "name": "C8: El sistema de E/S de la NDS",
+        "type": "page"
+    },
+    {
+        "id": 85,
+        "recid": 85,
+        "name": "Transparencias de la E/S en la NDS",
+        "type": "page"
+    },
+    {
+        "id": 86,
+        "recid": 86,
+        "name": "C9: E/S en la NDS",
+        "type": "page"
+    },
+    {
+        "id": 87,
+        "recid": 87,
+        "name": "programas c9.zip",
+        "type": "page"
+    },
+    {
+        "id": 88,
+        "recid": 88,
+        "name": "maximoVector.asm",
+        "type": "page"
+    },
+    {
+        "id": 89,
+        "recid": 89,
+        "name": "maximoVector.hack",
+        "type": "page"
+    },
+    {
+        "id": 90,
+        "recid": 90,
+        "name": "Instrucciones entregable laboratorio 8",
+        "type": "page"
+    },
+    {
+        "id": 91,
+        "recid": 91,
+        "name": "Vídeo lenguaje hack III",
+        "type": "page"
+    },
+    {
+        "id": 92,
+        "recid": 92,
+        "name": "Entregable teoría 8",
+        "type": "page"
+    },
+    {
+        "id": 93,
+        "recid": 93,
+        "name": "PulsarTeclas.asm",
+        "type": "page"
+    },
+    {
+        "id": 94,
+        "recid": 94,
+        "name": "Entregable laboratorio 8",
+        "type": "page"
+    },
+    {
+        "id": 95,
+        "recid": 95,
+        "name": "PintatUnaFila.asm",
+        "type": "page"
+    },
+    {
+        "id": 96,
+        "recid": 96,
+        "name": "Códigos para el laboratorio 8 (zip)",
+        "type": "page"
+    },
+    {
+        "id": 97,
+        "recid": 97,
+        "name": "Instrucciones entregable laboratorio 9",
+        "type": "page"
+    },
+    {
+        "id": 98,
+        "recid": 98,
+        "name": "La máquina Hack (Capítulo del libro)",
+        "type": "page"
+    },
+    {
+        "id": 99,
+        "recid": 99,
+        "name": "La máquina Hack (traspas de los autores del libro)",
+        "type": "page"
+    },
+    {
+        "id": 100,
+        "recid": 100,
+        "name": "Vídeo Computador I",
+        "type": "page"
+    },
+    {
+        "id": 101,
+        "recid": 101,
+        "name": "Entregable teoría 9",
+        "type": "page"
+    },
+    {
+        "id": 102,
+        "recid": 102,
+        "name": "Vídeo Computador II",
+        "type": "page"
+    },
+    {
+        "id": 103,
+        "recid": 103,
+        "name": "Entregable laboratorio 9",
+        "type": "page"
+    },
+    {
+        "id": 104,
+        "recid": 104,
+        "name": "codigoinicialLab9.zip",
+        "type": "page"
+    },
+    {
+        "id": 105,
+        "recid": 105,
+        "name": "Instrucciones entregable laboratorios 10 y 11",
+        "type": "page"
+    },
+    {
+        "id": 106,
+        "recid": 106,
+        "name": "Contenidos a tratar sobre la jerarquía de memorias de computadores",
+        "type": "page"
+    },
+    {
+        "id": 107,
+        "recid": 107,
+        "name": "Simulador de memoria caché (en python)",
+        "type": "page"
+    },
+    {
+        "id": 108,
+        "recid": 108,
+        "name": "Algortimo Caché CD",
+        "type": "page"
+    },
+    {
+        "id": 109,
+        "recid": 109,
+        "name": "Entregable teoría 10",
+        "type": "page"
+    },
+    {
+        "id": 110,
+        "recid": 110,
+        "name": "Entregable laboratorio 10",
+        "type": "page"
+    },
+    {
+        "id": 111,
+        "recid": 111,
+        "name": "Entregable laboratorio 11",
+        "type": "page"
+    },
+    {
+        "id": 112,
+        "recid": 112,
+        "name": "Algortimo Caché TA",
+        "type": "page"
+    },
+    {
+        "id": 113,
+        "recid": 113,
+        "name": "Entregable teoría 11",
+        "type": "page"
+    },
+    {
+        "id": 114,
+        "recid": 114,
+        "name": "Algortimo Caché AC",
+        "type": "page"
+    },
+    {
+        "id": 115,
+        "recid": 115,
+        "name": "Instrucciones entregable laboratorio 12",
+        "type": "page"
+    },
+    {
+        "id": 116,
+        "recid": 116,
+        "name": "Entregable teoría 12",
+        "type": "page"
+    },
+    {
+        "id": 117,
+        "recid": 117,
+        "name": "musica.mod",
+        "type": "page"
+    },
+    {
+        "id": 118,
+        "recid": 118,
+        "name": "sonidos.zip",
+        "type": "page"
+    },
+    {
+        "id": 119,
+        "recid": 119,
+        "name": "Entregable laboratorio 12",
+        "type": "page"
+    },
+    {
+        "id": 120,
+        "recid": 120,
+        "name": "Examen: Juego NDS",
+        "type": "page"
+    },
+    {
+        "id": 121,
+        "recid": 121,
+        "name": "Entregable teoría 13",
+        "type": "page"
+    }
+]
