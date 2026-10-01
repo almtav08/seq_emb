@@ -99,6 +99,10 @@ def evaluate_fold(
         out = model(data, mask=mask)
         return out.squeeze(0).cpu().detach()
 
+    user_metrics: List[Dict[str, Any]] = []
+    pass_map, pass_ndcg, pass_hr, pass_mrr = [], [], [], []
+    fail_cov, fail_back, fail_rep, fail_prog, fail_frac, fail_nov = [], [], [], [], [], []
+
     with torch.no_grad():
         for uid in test_keys:
             full_path = paths[uid]
@@ -110,92 +114,132 @@ def evaluate_fold(
             target_path = full_path[:n_interactions]
             target_emb = get_path_embedding(target_path)
 
-            if grades[uid] == 0:
-                # --- FAILING STUDENT: PATH INTERVENTION SIMULATION ---
-                coverage_rec: List[float] = []
-                backward_rec: List[float] = []
-                repeat_rec: List[float] = []
-                progress_rec: List[float] = []
-                frac_allowed_rec: List[float] = []
-                novelty_rec: List[float] = []
+            # 1. Ranking evaluation (Next-Item Prediction)
+            y_true = full_path[n_interactions:]
+            recs = calc_recommendations(
+                user_embeddings, target_emb, user_paths, target_path, top=top
+            )
+            true_set = y_true[: max(n_interactions // 5, 1)]
 
-                def generate_coverage_ratios(current_path: List[int], remaining_steps: int, current_emb: torch.Tensor):
-                    if remaining_steps == 0:
-                        m = calculate_path_metrics_from_maps(
-                            current_path,
-                            prereq_graph,
-                            remedial_graph,
-                            total_resources,
-                            popularity_map,
-                            steps=steps,
-                            local_window=local_window,
-                        )
-                        coverage_rec.append(m["coverage_ratio"])
-                        backward_rec.append(m["backward_prereq_ratio"])
-                        repeat_rec.append(m["revisit_ratio"])
-                        progress_rec.append(m["progress_ratio"])
-                        frac_allowed_rec.append(m["frac_allowed_edges"])
-                        novelty_rec.append(m["novelty"])
-                        return
+            u_map = apk(true_set, recs, k=top)
+            u_ndcg = ndcgk(true_set, recs, k=top)
+            u_hr = hit_ratio(true_set, recs, k=top)
+            u_mrr = mean_reciprocal_rank(true_set, recs, k=top)
 
-                    recs = calc_recommendations(
-                        user_embeddings, current_emb, user_paths, current_path, top=top
+            all_map.append(u_map)
+            all_ndcg.append(u_ndcg)
+            all_hr.append(u_hr)
+            all_mrr.append(u_mrr)
+
+            if grades[uid] == 1:
+                pass_map.append(u_map)
+                pass_ndcg.append(u_ndcg)
+                pass_hr.append(u_hr)
+                pass_mrr.append(u_mrr)
+
+            # 2. Path intervention simulation (Curricular Transitions & Deltas)
+            coverage_rec: List[float] = []
+            backward_rec: List[float] = []
+            repeat_rec: List[float] = []
+            progress_rec: List[float] = []
+            frac_allowed_rec: List[float] = []
+            novelty_rec: List[float] = []
+
+            def generate_coverage_ratios(current_path: List[int], remaining_steps: int, current_emb: torch.Tensor):
+                if remaining_steps == 0:
+                    m = calculate_path_metrics_from_maps(
+                        current_path,
+                        prereq_graph,
+                        remedial_graph,
+                        total_resources,
+                        popularity_map,
+                        steps=steps,
+                        local_window=local_window,
                     )
+                    coverage_rec.append(m["coverage_ratio"])
+                    backward_rec.append(m["backward_prereq_ratio"])
+                    repeat_rec.append(m["revisit_ratio"])
+                    progress_rec.append(m["progress_ratio"])
+                    frac_allowed_rec.append(m["frac_allowed_edges"])
+                    novelty_rec.append(m["novelty"])
+                    return
 
-                    for rec in recs:
-                        new_path = current_path + [rec]
-                        if len(new_path) <= max_seq_len:
-                            new_emb = get_path_embedding(new_path)
-                            generate_coverage_ratios(new_path, remaining_steps - 1, new_emb)
-
-                generate_coverage_ratios(target_path, steps, target_emb)
-
-                # Real path metrics of failing student
-                real_prefix = full_path[: n_interactions + steps]
-                real_m = calculate_path_metrics_from_maps(
-                    real_prefix,
-                    prereq_graph,
-                    remedial_graph,
-                    total_resources,
-                    popularity_map,
-                    steps=steps,
-                    local_window=local_window,
+                recs_sim = calc_recommendations(
+                    user_embeddings, current_emb, user_paths, current_path, top=top
                 )
 
-                if coverage_rec:
-                    coverage_deltas.append(float(np.mean(coverage_rec) - real_m["coverage_ratio"]))
-                    backward_deltas.append(float(np.mean(backward_rec) - real_m["backward_prereq_ratio"]))
-                    repeat_deltas.append(float(np.mean(repeat_rec) - real_m["revisit_ratio"]))
-                    progress_deltas.append(float(np.mean(progress_rec) - real_m["progress_ratio"]))
-                    frac_allowed_deltas.append(float(np.mean(frac_allowed_rec) - real_m["frac_allowed_edges"]))
-                    novelty_deltas.append(float(np.mean(novelty_rec) - real_m["novelty"]))
-            else:
-                # --- PASSING STUDENT: RANKING EVALUATION ---
-                y_true = full_path[n_interactions:]
-                recs = calc_recommendations(
-                    user_embeddings, target_emb, user_paths, target_path, top=top
-                )
-                true_set = y_true[: max(n_interactions // 5, 1)]
+                for rec in recs_sim:
+                    new_path = current_path + [rec]
+                    if len(new_path) <= max_seq_len:
+                        new_emb = get_path_embedding(new_path)
+                        generate_coverage_ratios(new_path, remaining_steps - 1, new_emb)
 
-                all_map.append(apk(true_set, recs, k=top))
-                all_ndcg.append(ndcgk(true_set, recs, k=top))
-                all_hr.append(hit_ratio(true_set, recs, k=top))
-                all_mrr.append(mean_reciprocal_rank(true_set, recs, k=top))
+            generate_coverage_ratios(target_path, steps, target_emb)
+
+            real_prefix = full_path[: n_interactions + steps]
+            real_m = calculate_path_metrics_from_maps(
+                real_prefix,
+                prereq_graph,
+                remedial_graph,
+                total_resources,
+                popularity_map,
+                steps=steps,
+                local_window=local_window,
+            )
+
+            u_cov = float(np.mean(coverage_rec) - real_m["coverage_ratio"]) if coverage_rec else 0.0
+            u_back = float(np.mean(backward_rec) - real_m["backward_prereq_ratio"]) if backward_rec else 0.0
+            u_rep = float(np.mean(repeat_rec) - real_m["revisit_ratio"]) if repeat_rec else 0.0
+            u_prog = float(np.mean(progress_rec) - real_m["progress_ratio"]) if progress_rec else 0.0
+            u_frac = float(np.mean(frac_allowed_rec) - real_m["frac_allowed_edges"]) if frac_allowed_rec else 0.0
+            u_nov = float(np.mean(novelty_rec) - real_m["novelty"]) if novelty_rec else 0.0
+
+            coverage_deltas.append(u_cov)
+            backward_deltas.append(u_back)
+            repeat_deltas.append(u_rep)
+            progress_deltas.append(u_prog)
+            frac_allowed_deltas.append(u_frac)
+            novelty_deltas.append(u_nov)
+
+            if grades[uid] == 0:
+                fail_cov.append(u_cov)
+                fail_back.append(u_back)
+                fail_rep.append(u_rep)
+                fail_prog.append(u_prog)
+                fail_frac.append(u_frac)
+                fail_nov.append(u_nov)
+
+            user_record = {
+                "user_id": uid,
+                "grade": int(grades[uid]),
+                "map": u_map,
+                "ndcg": u_ndcg,
+                "hr": u_hr,
+                "mrr": u_mrr,
+                "coverage_ratio": u_cov,
+                "backward_ratio": u_back,
+                "repeat_ratio": u_rep,
+                "progress_ratio": u_prog,
+                "frac_allowed_edges": u_frac,
+                "novelty": u_nov,
+            }
+            user_metrics.append(user_record)
 
     return {
+        "user_metrics": user_metrics,
         "pass_metrics": {
-            "map": all_map,
-            "ndcg": all_ndcg,
-            "hr": all_hr,
-            "mrr": all_mrr,
+            "map": pass_map,
+            "ndcg": pass_ndcg,
+            "hr": pass_hr,
+            "mrr": pass_mrr,
         },
         "fail_metrics": {
-            "coverage_ratio": coverage_deltas,
-            "backward_ratio": backward_deltas,
-            "repeat_ratio": repeat_deltas,
-            "progress_ratio": progress_deltas,
-            "frac_allowed_edges": frac_allowed_deltas,
-            "novelty": novelty_deltas,
+            "coverage_ratio": fail_cov,
+            "backward_ratio": fail_back,
+            "repeat_ratio": fail_rep,
+            "progress_ratio": fail_prog,
+            "frac_allowed_edges": fail_frac,
+            "novelty": fail_nov,
         },
         "mean_map": float(np.mean(all_map)) if all_map else 0.0,
         "mean_ndcg": float(np.mean(all_ndcg)) if all_ndcg else 0.0,

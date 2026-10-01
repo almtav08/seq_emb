@@ -94,6 +94,7 @@ class BaseSequentialModel(nn.Module):
         lr: float = 1e-4,
     ):
         """Configure optimizer and loss criterion."""
+        lr = float(lr)
         if criterion is None:
             self.criterion = SupConLoss()
         else:

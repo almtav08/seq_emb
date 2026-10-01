@@ -101,15 +101,13 @@ class CrossValidationRunner:
         student_ids = list(paths.keys())
         n_students = len(student_ids)
 
-        all_pass_metrics = {"map": [], "ndcg": [], "hr": [], "mrr": []}
-        all_fail_metrics = {
-            "coverage_ratio": [],
-            "backward_ratio": [],
-            "repeat_ratio": [],
-            "progress_ratio": [],
-            "frac_allowed_edges": [],
-            "novelty": [],
-        }
+        user_records: List[Dict[str, Any]] = []
+        metric_keys = [
+            "map", "ndcg", "hr", "mrr",
+            "coverage_ratio", "backward_ratio", "repeat_ratio",
+            "progress_ratio", "frac_allowed_edges", "novelty"
+        ]
+        all_metrics = {k: [] for k in metric_keys}
 
         iterator = range(n_students)
         if verbose:
@@ -171,39 +169,22 @@ class CrossValidationRunner:
                 local_window=local_window,
             )
 
-            if grades[test_key] == 1:
-                for k in all_pass_metrics:
-                    all_pass_metrics[k].extend(res["pass_metrics"][k])
-            else:
-                for k in all_fail_metrics:
-                    all_fail_metrics[k].extend(res["fail_metrics"][k])
+            if res.get("user_metrics"):
+                u_rec = res["user_metrics"][0]
+                user_records.append(u_rec)
+                for k in metric_keys:
+                    all_metrics[k].append(u_rec[k])
 
-        # Compute averages and standard deviations
-        mean_metrics = {
-            "mean_map": float(np.mean(all_pass_metrics["map"])) if all_pass_metrics["map"] else 0.0,
-            "mean_ndcg": float(np.mean(all_pass_metrics["ndcg"])) if all_pass_metrics["ndcg"] else 0.0,
-            "mean_hr": float(np.mean(all_pass_metrics["hr"])) if all_pass_metrics["hr"] else 0.0,
-            "mean_mrr": float(np.mean(all_pass_metrics["mrr"])) if all_pass_metrics["mrr"] else 0.0,
-            "mean_coverage_ratio": float(np.mean(all_fail_metrics["coverage_ratio"])) if all_fail_metrics["coverage_ratio"] else 0.0,
-            "mean_backward_ratio": float(np.mean(all_fail_metrics["backward_ratio"])) if all_fail_metrics["backward_ratio"] else 0.0,
-            "mean_repeat_ratio": float(np.mean(all_fail_metrics["repeat_ratio"])) if all_fail_metrics["repeat_ratio"] else 0.0,
-            "mean_progress_ratio": float(np.mean(all_fail_metrics["progress_ratio"])) if all_fail_metrics["progress_ratio"] else 0.0,
-            "mean_frac_allowed_edges": float(np.mean(all_fail_metrics["frac_allowed_edges"])) if all_fail_metrics["frac_allowed_edges"] else 0.0,
-            "mean_novelty": float(np.mean(all_fail_metrics["novelty"])) if all_fail_metrics["novelty"] else 0.0,
-        }
+        # Compute averages and standard deviations across all students (N=48)
+        mean_metrics = {f"mean_{k}": float(np.mean(all_metrics[k])) if all_metrics[k] else 0.0 for k in metric_keys}
+        std_metrics = {f"mean_{k}": float(np.std(all_metrics[k], ddof=1)) if len(all_metrics[k]) > 1 else 0.0 for k in metric_keys}
 
-        std_metrics = {
-            "mean_map": float(np.std(all_pass_metrics["map"], ddof=1)) if len(all_pass_metrics["map"]) > 1 else 0.0,
-            "mean_ndcg": float(np.std(all_pass_metrics["ndcg"], ddof=1)) if len(all_pass_metrics["ndcg"]) > 1 else 0.0,
-            "mean_hr": float(np.std(all_pass_metrics["hr"], ddof=1)) if len(all_pass_metrics["hr"]) > 1 else 0.0,
-            "mean_mrr": float(np.std(all_pass_metrics["mrr"], ddof=1)) if len(all_pass_metrics["mrr"]) > 1 else 0.0,
-            "mean_coverage_ratio": float(np.std(all_fail_metrics["coverage_ratio"], ddof=1)) if len(all_fail_metrics["coverage_ratio"]) > 1 else 0.0,
-            "mean_backward_ratio": float(np.std(all_fail_metrics["backward_ratio"], ddof=1)) if len(all_fail_metrics["backward_ratio"]) > 1 else 0.0,
-            "mean_repeat_ratio": float(np.std(all_fail_metrics["repeat_ratio"], ddof=1)) if len(all_fail_metrics["repeat_ratio"]) > 1 else 0.0,
-            "mean_progress_ratio": float(np.std(all_fail_metrics["progress_ratio"], ddof=1)) if len(all_fail_metrics["progress_ratio"]) > 1 else 0.0,
-            "mean_frac_allowed_edges": float(np.std(all_fail_metrics["frac_allowed_edges"], ddof=1)) if len(all_fail_metrics["frac_allowed_edges"]) > 1 else 0.0,
-            "mean_novelty": float(np.std(all_fail_metrics["novelty"], ddof=1)) if len(all_fail_metrics["novelty"]) > 1 else 0.0,
-        }
+        pass_records = [r for r in user_records if r["grade"] == 1]
+        fail_records = [r for r in user_records if r["grade"] == 0]
+        mean_pass = {f"mean_{k}": float(np.mean([r[k] for r in pass_records])) if pass_records else 0.0 for k in metric_keys}
+        std_pass = {f"mean_{k}": float(np.std([r[k] for r in pass_records], ddof=1)) if len(pass_records) > 1 else 0.0 for k in metric_keys}
+        mean_fail = {f"mean_{k}": float(np.mean([r[k] for r in fail_records])) if fail_records else 0.0 for k in metric_keys}
+        std_fail = {f"mean_{k}": float(np.std([r[k] for r in fail_records], ddof=1)) if len(fail_records) > 1 else 0.0 for k in metric_keys}
 
         return {
             "model_name": model_name,
@@ -211,10 +192,15 @@ class CrossValidationRunner:
             "strategy": "loocv",
             "seed": self.seed,
             "n_students": n_students,
-            "n_pass": len(all_pass_metrics["map"]),
-            "n_fail": len(all_fail_metrics["coverage_ratio"]),
+            "n_pass": len(pass_records),
+            "n_fail": len(fail_records),
+            "user_metrics": user_records,
             "mean": mean_metrics,
             "std": std_metrics,
+            "mean_pass": mean_pass,
+            "std_pass": std_pass,
+            "mean_fail": mean_fail,
+            "std_fail": std_fail,
         }
 
     def run_kfold(
@@ -246,6 +232,7 @@ class CrossValidationRunner:
 
         skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=self.seed)
         fold_results = []
+        user_records: List[Dict[str, Any]] = []
 
         for fold, (train_loc, test_loc) in enumerate(skf.split(student_ids, student_labels)):
             if verbose:
@@ -300,18 +287,27 @@ class CrossValidationRunner:
                 local_window=local_window,
             )
             fold_results.append(metrics)
+            if metrics.get("user_metrics"):
+                user_records.extend(metrics["user_metrics"])
 
+        metric_keys = [
+            "map", "ndcg", "hr", "mrr",
+            "coverage_ratio", "backward_ratio", "repeat_ratio",
+            "progress_ratio", "frac_allowed_edges", "novelty"
+        ]
         mean_metrics = {}
         std_metrics = {}
-        metric_keys = [
-            "mean_map", "mean_ndcg", "mean_hr", "mean_mrr",
-            "mean_coverage_ratio", "mean_backward_ratio", "mean_repeat_ratio",
-            "mean_progress_ratio", "mean_frac_allowed_edges", "mean_novelty"
-        ]
-        for key in metric_keys:
+        for key in [f"mean_{k}" for k in metric_keys]:
             vals = [f[key] for f in fold_results]
             mean_metrics[key] = float(np.mean(vals))
             std_metrics[key] = float(np.std(vals, ddof=1)) if len(vals) > 1 else 0.0
+
+        pass_records = [r for r in user_records if r["grade"] == 1]
+        fail_records = [r for r in user_records if r["grade"] == 0]
+        mean_pass = {f"mean_{k}": float(np.mean([r[k] for r in pass_records])) if pass_records else 0.0 for k in metric_keys}
+        std_pass = {f"mean_{k}": float(np.std([r[k] for r in pass_records], ddof=1)) if len(pass_records) > 1 else 0.0 for k in metric_keys}
+        mean_fail = {f"mean_{k}": float(np.mean([r[k] for r in fail_records])) if fail_records else 0.0 for k in metric_keys}
+        std_fail = {f"mean_{k}": float(np.std([r[k] for r in fail_records], ddof=1)) if len(fail_records) > 1 else 0.0 for k in metric_keys}
 
         return {
             "model_name": model_name,
@@ -319,9 +315,17 @@ class CrossValidationRunner:
             "strategy": "kfold",
             "seed": self.seed,
             "n_splits": n_splits,
+            "n_students": len(user_records),
+            "n_pass": len(pass_records),
+            "n_fail": len(fail_records),
+            "user_metrics": user_records,
             "folds": fold_results,
             "mean": mean_metrics,
             "std": std_metrics,
+            "mean_pass": mean_pass,
+            "std_pass": std_pass,
+            "mean_fail": mean_fail,
+            "std_fail": std_fail,
         }
 
 

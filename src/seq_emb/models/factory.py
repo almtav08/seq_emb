@@ -3,6 +3,7 @@
 from typing import Dict, Any, Union, Optional
 import torch
 
+from ..core.config import load_config
 from .base import BaseSequentialModel
 from .caser import CaserModel
 from .grurec import GRURecModel
@@ -11,29 +12,29 @@ from .sasrec import SASRecModel
 
 DEFAULT_HYPERPARAMS = {
     "caser": {
-        "num_vert_filters": 8,
-        "num_hori_filters": 2,
-        "hori_filter_sizes": (2, 3, 4),
+        "num_vert_filters": 4,
+        "num_hori_filters": 16,
+        "hori_filter_sizes": (5, 6, 7),
         "dropout": 0.2,
         "pooling": "last",
-        "optimizer": torch.optim.Adagrad,
-        "lr": 1e-5,
-    },
-    "grurec": {
-        "num_layers": 10,
-        "hidden_dim": 16,
-        "pooling": "mean",
-        "dropout": 0.2,
         "optimizer": torch.optim.Adam,
         "lr": 1e-4,
+    },
+    "grurec": {
+        "num_layers": 8,
+        "hidden_dim": 16,
+        "pooling": "last",
+        "dropout": 0.15,
+        "optimizer": torch.optim.SGD,
+        "lr": 1e-5,
     },
     "sasrec": {
         "num_layers": 10,
-        "num_heads": 10,
-        "pooling": "last",
-        "dropout": 0.15,
-        "optimizer": torch.optim.Adam,
-        "lr": 1e-4,
+        "num_heads": 3,
+        "pooling": "mean",
+        "dropout": 0.1,
+        "optimizer": torch.optim.Adagrad,
+        "lr": 1e-5,
     },
 }
 
@@ -67,11 +68,14 @@ def create_model(
         raise ValueError(f"Unknown model name '{model_name}'. Choose from: 'caser', 'grurec', 'sasrec'.")
 
     params = DEFAULT_HYPERPARAMS[name].copy()
+    cfg = load_config()
+    if cfg and "models" in cfg and name in cfg["models"]:
+        params.update(cfg["models"][name])
     if custom_params:
         params.update(custom_params)
 
     opt_cls = params.pop("optimizer", torch.optim.Adam)
-    lr = params.pop("lr", 1e-4)
+    lr = float(params.pop("lr", 1e-4))
 
     common_kwargs = {
         "embedding_dim": embedding_dim,

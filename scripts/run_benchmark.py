@@ -8,6 +8,7 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_root / "src"))
 
+from seq_emb.core.config import load_config
 from seq_emb.experiments.kfold_runner import KFoldRunner
 
 
@@ -23,35 +24,52 @@ BENCHMARK_CONFIGS = [
 
 def main():
     import argparse
+    parser = argparse.ArgumentParser(description="Run full benchmark across all 6 model variants.")
+    parser.add_argument("--config", type=str, default="configs/default.yaml",
+                        help="Path to YAML configuration file (default: configs/default.yaml).")
     parser.add_argument("--strategy", type=str, default="loocv", choices=["loocv", "kfold"],
                         help="Cross-validation strategy: 'loocv' (Leave-One-Out) or 'kfold' (Stratified K-Fold).")
-    parser.add_argument("--epochs", type=int, default=500, help="Epochs per iteration (default: 500).")
-    parser.add_argument("--batch-size", type=int, default=4, help="Batch size (default: 4).")
-    parser.add_argument("--seed", type=int, default=42, help="Seed for reproducibility.")
-    parser.add_argument("--device", type=str, default="auto", help="Compute device ('cuda', 'cpu', 'auto').")
+    parser.add_argument("--epochs", type=int, default=None, help="Epochs per iteration (default: from config or 500).")
+    parser.add_argument("--batch-size", type=int, default=None, help="Batch size (default: from config or 4).")
+    parser.add_argument("--seed", type=int, default=None, help="Seed for reproducibility (default: from config or 42).")
+    parser.add_argument("--device", type=str, default=None, help="Compute device ('cuda', 'cpu', 'auto').")
     parser.add_argument("--local-window", action="store_true", default=False, help="Use local window metrics.")
     parser.add_argument("--output", type=str, default=None, help="Output path for JSON results.")
 
     args = parser.parse_args()
 
-    runner = KFoldRunner(seed=args.seed, device=args.device)
+    cfg = load_config(args.config)
+    seed = args.seed if args.seed is not None else cfg.get("seed", 42)
+    device = args.device if args.device is not None else cfg.get("device", "auto")
+    epochs = args.epochs if args.epochs is not None else cfg.get("num_epochs", 500)
+    batch_size = args.batch_size if args.batch_size is not None else cfg.get("batch_size", 4)
+    n_splits = cfg.get("n_splits", 5)
+    models_cfg = cfg.get("models", {})
+
+    runner = KFoldRunner(seed=seed, device=device)
     all_results = {}
 
     print("\n" + "=" * 110)
     print("INICIANDO BENCHMARK COMPLETO DE MODELOS SECUENCIALES")
-    print(f"Estrategia: {args.strategy.upper()} | Semilla: {args.seed} | Épocas: {args.epochs} | Dispositivo: {runner.device} | Modo Ventana Local: {args.local_window}")
+    print(f"Estrategia: {args.strategy.upper()} | Semilla: {seed} | Épocas: {epochs} | Batch: {batch_size} | Dispositivo: {runner.device} | Modo Ventana Local: {args.local_window}")
+    if args.config and Path(args.config).exists():
+        print(f"Configuración cargada desde: {args.config}")
     print("=" * 110 + "\n")
 
     for key, model_name, use_pog, label in BENCHMARK_CONFIGS:
         print(f"\n>>> Ejecutando {label} ({args.strategy.upper()})...")
+        model_custom_params = models_cfg.get(model_name, None)
+        if model_custom_params:
+            print(f"    Hiperparámetros ({model_name}): {model_custom_params}")
         try:
             res = runner.run(
                 model_name=model_name,
                 use_pog=use_pog,
                 strategy=args.strategy,
-                n_splits=5,
-                num_epochs=args.epochs,
-                batch_size=args.batch_size,
+                n_splits=n_splits,
+                num_epochs=epochs,
+                batch_size=batch_size,
+                custom_params=model_custom_params,
                 local_window=args.local_window,
                 verbose=True,
             )
@@ -97,7 +115,28 @@ def main():
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(all_results, f, indent=4)
-    print(f"\nResultados guardados exitosamente en: {output_file}\n")
+    print(f"\nResultados guardados exitosamente en: {output_file}")
+
+    # Export user-level metrics across all methods for detailed statistical analysis
+    import pandas as pd
+    all_user_rows = []
+    for key, model_name, use_pog, label in BENCHMARK_CONFIGS:
+        res = all_results.get(key, {})
+        for u_rec in res.get("user_metrics", []):
+            row = {
+                "model_key": key,
+                "model": model_name,
+                "use_pog": use_pog,
+                "label": label,
+                **u_rec,
+            }
+            all_user_rows.append(row)
+
+    if all_user_rows:
+        df_users = pd.DataFrame(all_user_rows)
+        users_csv = output_file.with_name(output_file.stem + "_user_level.csv")
+        df_users.to_csv(users_csv, index=False)
+        print(f"Métricas individuales por usuario ({len(df_users)} filas: 48 usuarios x {len(BENCHMARK_CONFIGS)} métodos) guardadas en:\n  -> {users_csv}\n")
 
 
 if __name__ == "__main__":
