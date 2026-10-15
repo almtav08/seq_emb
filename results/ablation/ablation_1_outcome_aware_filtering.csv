@@ -1,4 +1,4 @@
-Estrategia / Modelo,Closest Pass?,Coverage (↑),Backward (↓),Repeat (↓),Frac Allowed (↑),Novelty (↑),Δ % Coverage,Δ % Backward,Δ % Repeat,Δ % Frac Allowed,Δ % Novelty
+Estrategia / Modelo,Outcome-Aware (Closest Pass)?,Coverage (↑),Backward (↓),Repeat (↓),Frac Allowed (↑),Novelty (↑),Δ % Coverage,Δ % Backward,Δ % Repeat,Δ % Frac Allowed,Δ % Novelty
 Naive Baseline (Trayectoria real sin intervención),No,0.3496 (Base),0.1092 (Base),0.0128 (Base),0.3014 (Base),0.6175 (Base),0.00%,0.00%,0.00%,0.00%,0.00%
 Caser (con POG),Sí,0.3648 (+4.34%),0.1049 (-4.00%),0.0132 (+2.95%),0.2937 (-2.55%),0.6441 (+4.31%),+4.34%,-4.00%,+2.95%,-2.55%,+4.31%
 Caser (sin POG),Sí,0.3648 (+4.34%),0.1049 (-3.97%),0.0131 (+2.15%),0.2936 (-2.57%),0.6426 (+4.07%),+4.34%,-3.97%,+2.15%,-2.57%,+4.07%

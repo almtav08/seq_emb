@@ -34,6 +34,10 @@ def main():
     parser.add_argument("--seed", type=int, default=None, help="Seed for reproducibility (default: from config or 42).")
     parser.add_argument("--device", type=str, default=None, help="Compute device ('cuda', 'cpu', 'auto').")
     parser.add_argument("--local-window", action="store_true", default=False, help="Use local window metrics.")
+    parser.add_argument("--checkpoints-dir", type=str, default="checkpoints",
+                        help="Directory to save trained model checkpoints (default: 'checkpoints').")
+    parser.add_argument("--no-save-checkpoints", dest="save_checkpoints", action="store_false", default=True,
+                        help="Disable saving model checkpoints.")
     parser.add_argument("--output", type=str, default=None, help="Output path for JSON results.")
 
     args = parser.parse_args()
@@ -72,6 +76,8 @@ def main():
                 custom_params=model_custom_params,
                 local_window=args.local_window,
                 verbose=True,
+                save_checkpoints=args.save_checkpoints,
+                checkpoints_dir=args.checkpoints_dir,
             )
             res["label"] = label
             all_results[key] = res
@@ -137,6 +143,21 @@ def main():
         users_csv = output_file.with_name(output_file.stem + "_user_level.csv")
         df_users.to_csv(users_csv, index=False)
         print(f"Métricas individuales por usuario ({len(df_users)} filas: 48 usuarios x {len(BENCHMARK_CONFIGS)} métodos) guardadas en:\n  -> {users_csv}\n")
+
+    # Consolidate all model checkpoints into a single all_models.pt file
+    if args.save_checkpoints:
+        import torch
+        chk_dir = Path(args.checkpoints_dir)
+        chk_dir.mkdir(parents=True, exist_ok=True)
+        all_models_dict = {}
+        for key, model_name, use_pog, label in BENCHMARK_CONFIGS:
+            model_pt = chk_dir / f"{key}.pt"
+            if model_pt.exists():
+                all_models_dict[key] = torch.load(model_pt, map_location="cpu")
+        if all_models_dict:
+            consolidated_pt = chk_dir / "all_models.pt"
+            torch.save(all_models_dict, consolidated_pt)
+            print(f"Los 6 modelos consolidados se han guardado exitosamente en:\n  -> {consolidated_pt}\n")
 
 
 if __name__ == "__main__":

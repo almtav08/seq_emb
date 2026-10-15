@@ -1,7 +1,7 @@
-"""Cross-validation experiment runner supporting Leave-One-Out (LOOCV) and Stratified K-Fold."""
-
+from pathlib import Path
 from typing import Dict, Any, Optional
 import numpy as np
+import torch
 from sklearn.model_selection import StratifiedKFold
 from tqdm import tqdm
 
@@ -40,6 +40,8 @@ class CrossValidationRunner:
         custom_params: Optional[Dict[str, Any]] = None,
         local_window: bool = False,
         verbose: bool = False,
+        save_checkpoints: bool = True,
+        checkpoints_dir: Optional[str] = "checkpoints",
     ) -> Dict[str, Any]:
         """
         Run model evaluation using either Leave-One-Out Cross-Validation ('loocv')
@@ -56,6 +58,8 @@ class CrossValidationRunner:
                 custom_params=custom_params,
                 local_window=local_window,
                 verbose=verbose,
+                save_checkpoints=save_checkpoints,
+                checkpoints_dir=checkpoints_dir,
             )
         elif strat in ["kfold", "stratified_kfold"]:
             return self.run_kfold(
@@ -68,6 +72,8 @@ class CrossValidationRunner:
                 custom_params=custom_params,
                 local_window=local_window,
                 verbose=verbose,
+                save_checkpoints=save_checkpoints,
+                checkpoints_dir=checkpoints_dir,
             )
         else:
             raise ValueError(f"Unknown validation strategy: '{strategy}'. Choose 'loocv' or 'kfold'.")
@@ -82,6 +88,8 @@ class CrossValidationRunner:
         custom_params: Optional[Dict[str, Any]] = None,
         local_window: bool = False,
         verbose: bool = False,
+        save_checkpoints: bool = True,
+        checkpoints_dir: Optional[str] = "checkpoints",
     ) -> Dict[str, Any]:
         """
         Execute Leave-One-Out Cross-Validation (LOOCV).
@@ -151,6 +159,13 @@ class CrossValidationRunner:
                 verbose=False,
             )
 
+            # Save fold model checkpoint if requested
+            if save_checkpoints and checkpoints_dir:
+                tag = f"{model_name}_{'pog' if use_pog else 'nopog'}"
+                fold_dir = Path(checkpoints_dir) / tag
+                fold_dir.mkdir(parents=True, exist_ok=True)
+                model.save(fold_dir / f"fold_{i}.pt")
+
             # Evaluate on held-out student
             res = evaluate_fold(
                 model=model,
@@ -174,6 +189,40 @@ class CrossValidationRunner:
                 user_records.append(u_rec)
                 for k in metric_keys:
                     all_metrics[k].append(u_rec[k])
+
+        # Save consolidated full model trained on all N students
+        if save_checkpoints and checkpoints_dir:
+            tag = f"{model_name}_{'pog' if use_pog else 'nopog'}"
+            full_x, full_y, full_masks = prepare_tensors(
+                student_ids=student_ids,
+                paths=paths,
+                grades=grades,
+                max_seq_len=max_seq_len,
+                device=self.device,
+                use_pog=use_pog,
+                graph_embedder=self.graph_embedder if use_pog else None,
+            )
+            full_model = create_model(
+                model_name=model_name,
+                use_pog=use_pog,
+                embedding_dim=embedding_dim,
+                max_seq_length=max_seq_len,
+                num_items=num_items,
+                device=self.device,
+                custom_params=custom_params,
+            )
+            full_model.fit(
+                train_x=full_x,
+                train_y=full_y,
+                train_masks=full_masks,
+                num_epochs=num_epochs,
+                batch_size=batch_size,
+                verbose=False,
+            )
+            full_path = Path(checkpoints_dir) / f"{tag}.pt"
+            full_model.save(full_path)
+            if verbose:
+                print(f"    Checkpoint de modelo completo guardado en: {full_path}")
 
         # Compute averages and standard deviations across all students (N=48)
         mean_metrics = {f"mean_{k}": float(np.mean(all_metrics[k])) if all_metrics[k] else 0.0 for k in metric_keys}
@@ -214,6 +263,8 @@ class CrossValidationRunner:
         custom_params: Optional[Dict[str, Any]] = None,
         local_window: bool = False,
         verbose: bool = False,
+        save_checkpoints: bool = True,
+        checkpoints_dir: Optional[str] = "checkpoints",
     ) -> Dict[str, Any]:
         """Run Stratified K-Fold cross-validation."""
         set_seed(self.seed)
@@ -261,6 +312,7 @@ class CrossValidationRunner:
                 custom_params=custom_params,
             )
 
+            # Train on fold training set
             model.fit(
                 train_x=train_x,
                 train_y=train_y,
@@ -269,6 +321,13 @@ class CrossValidationRunner:
                 batch_size=batch_size,
                 verbose=False,
             )
+
+            # Save fold model checkpoint if requested
+            if save_checkpoints and checkpoints_dir:
+                tag = f"{model_name}_{'pog' if use_pog else 'nopog'}"
+                fold_dir = Path(checkpoints_dir) / tag
+                fold_dir.mkdir(parents=True, exist_ok=True)
+                model.save(fold_dir / f"fold_{fold}.pt")
 
             metrics = evaluate_fold(
                 model=model,
@@ -289,6 +348,40 @@ class CrossValidationRunner:
             fold_results.append(metrics)
             if metrics.get("user_metrics"):
                 user_records.extend(metrics["user_metrics"])
+
+        # Save consolidated full model trained on all N students
+        if save_checkpoints and checkpoints_dir:
+            tag = f"{model_name}_{'pog' if use_pog else 'nopog'}"
+            full_x, full_y, full_masks = prepare_tensors(
+                student_ids=student_ids,
+                paths=paths,
+                grades=grades,
+                max_seq_len=max_seq_len,
+                device=self.device,
+                use_pog=use_pog,
+                graph_embedder=self.graph_embedder if use_pog else None,
+            )
+            full_model = create_model(
+                model_name=model_name,
+                use_pog=use_pog,
+                embedding_dim=embedding_dim,
+                max_seq_length=max_seq_len,
+                num_items=num_items,
+                device=self.device,
+                custom_params=custom_params,
+            )
+            full_model.fit(
+                train_x=full_x,
+                train_y=full_y,
+                train_masks=full_masks,
+                num_epochs=num_epochs,
+                batch_size=batch_size,
+                verbose=False,
+            )
+            full_path = Path(checkpoints_dir) / f"{tag}.pt"
+            full_model.save(full_path)
+            if verbose:
+                print(f"    Checkpoint de modelo completo guardado en: {full_path}")
 
         metric_keys = [
             "map", "ndcg", "hr", "mrr",

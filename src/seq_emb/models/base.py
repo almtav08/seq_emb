@@ -1,6 +1,5 @@
-"""Base class for sequential embedding models with and without POG."""
-
-from typing import Optional, Union, Type
+from pathlib import Path
+from typing import Optional, Union, Type, Dict, Any
 import time
 import torch
 import torch.nn as nn
@@ -174,4 +173,34 @@ class BaseSequentialModel(nn.Module):
             if verbose and (epoch + 1) % 50 == 0:
                 print(f"Epoch [{epoch+1}/{num_epochs}] - Loss: {avg_loss:.4f}")
 
+        return self
+
+    def save(self, filepath: Union[str, Path]) -> str:
+        """Save model state dict and architecture metadata to checkpoint file."""
+        p = Path(filepath)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "state_dict": self.state_dict(),
+            "model_class": self.__class__.__name__,
+            "embedding_dim": self.embedding_dim,
+            "max_seq_length": self.max_seq_length,
+            "dropout": self.dropout,
+            "pooling": self.pooling,
+            "use_pog": self.use_pog,
+            "num_items": self.num_items,
+            "history": self.history,
+        }
+        torch.save(payload, str(p))
+        return str(p)
+
+    def load(self, filepath: Union[str, Path]) -> "BaseSequentialModel":
+        """Load model state dict from checkpoint file."""
+        checkpoint = torch.load(str(filepath), map_location=self.device)
+        if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+            self.load_state_dict(checkpoint["state_dict"])
+            if "history" in checkpoint:
+                self.history = checkpoint["history"]
+        else:
+            self.load_state_dict(checkpoint)
+        self.to(self.device)
         return self

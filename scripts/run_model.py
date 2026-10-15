@@ -33,6 +33,10 @@ def main():
     parser.add_argument("--device", type=str, default=None, help="Compute device ('cuda', 'cpu', 'auto').")
     parser.add_argument("--local-window", action="store_true", default=False,
                         help="Evaluate transition metrics on the intervention window only.")
+    parser.add_argument("--checkpoints-dir", type=str, default="checkpoints",
+                        help="Directory to save model checkpoints (default: 'checkpoints').")
+    parser.add_argument("--no-save-checkpoints", dest="save_checkpoints", action="store_false", default=True,
+                        help="Disable saving model checkpoints.")
     parser.add_argument("--output", type=str, default=None, help="Optional path to save JSON results.")
 
     args = parser.parse_args()
@@ -63,6 +67,8 @@ def main():
         custom_params=model_custom_params,
         local_window=args.local_window,
         verbose=True,
+        save_checkpoints=args.save_checkpoints,
+        checkpoints_dir=args.checkpoints_dir,
     )
 
     strat_label = f"LOOCV ({results.get('n_students', 48)} Iteraciones)" if args.strategy == "loocv" else f"{args.splits} Folds"
