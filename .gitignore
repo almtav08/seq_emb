@@ -2,3 +2,4 @@ manuscript/
 uv.lock
 __pycache__
 .venv
+checkpoints/
