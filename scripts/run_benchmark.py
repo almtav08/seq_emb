@@ -34,6 +34,8 @@ def main():
     parser.add_argument("--seed", type=int, default=None, help="Seed for reproducibility (default: from config or 42).")
     parser.add_argument("--device", type=str, default=None, help="Compute device ('cuda', 'cpu', 'auto').")
     parser.add_argument("--local-window", action="store_true", default=False, help="Use local window metrics.")
+    parser.add_argument("--pog-only", action="store_true", default=False,
+                        help="Run only the 3 models with POG (caser_pog, grurec_pog, sasrec_pog).")
     parser.add_argument("--checkpoints-dir", type=str, default="checkpoints",
                         help="Directory to save trained model checkpoints (default: 'checkpoints').")
     parser.add_argument("--no-save-checkpoints", dest="save_checkpoints", action="store_false", default=True,
@@ -53,14 +55,17 @@ def main():
     runner = KFoldRunner(seed=seed, device=device)
     all_results = {}
 
+    configs_to_run = [c for c in BENCHMARK_CONFIGS if c[2] is True] if args.pog_only else BENCHMARK_CONFIGS
+
     print("\n" + "=" * 110)
-    print("INICIANDO BENCHMARK COMPLETO DE MODELOS SECUENCIALES")
+    mode_suite = "MODELOS CON POG (CASER, GRU4REC, SASREC)" if args.pog_only else "BENCHMARK COMPLETO (6 MODELOS)"
+    print(f"INICIANDO {mode_suite}")
     print(f"Estrategia: {args.strategy.upper()} | Semilla: {seed} | Épocas: {epochs} | Batch: {batch_size} | Dispositivo: {runner.device} | Modo Ventana Local: {args.local_window}")
     if args.config and Path(args.config).exists():
         print(f"Configuración cargada desde: {args.config}")
     print("=" * 110 + "\n")
 
-    for key, model_name, use_pog, label in BENCHMARK_CONFIGS:
+    for key, model_name, use_pog, label in configs_to_run:
         print(f"\n>>> Ejecutando {label} ({args.strategy.upper()})...")
         model_custom_params = models_cfg.get(model_name, None)
         if model_custom_params:
@@ -95,7 +100,7 @@ def main():
     print(header)
     print("-" * 115)
 
-    for key, _, _, label in BENCHMARK_CONFIGS:
+    for key, _, _, label in configs_to_run:
         res = all_results.get(key, {})
         m = res.get("mean", {})
         if m:
@@ -126,7 +131,7 @@ def main():
     # Export user-level metrics across all methods for detailed statistical analysis
     import pandas as pd
     all_user_rows = []
-    for key, model_name, use_pog, label in BENCHMARK_CONFIGS:
+    for key, model_name, use_pog, label in configs_to_run:
         res = all_results.get(key, {})
         for u_rec in res.get("user_metrics", []):
             row = {
@@ -142,22 +147,22 @@ def main():
         df_users = pd.DataFrame(all_user_rows)
         users_csv = output_file.with_name(output_file.stem + "_user_level.csv")
         df_users.to_csv(users_csv, index=False)
-        print(f"Métricas individuales por usuario ({len(df_users)} filas: 48 usuarios x {len(BENCHMARK_CONFIGS)} métodos) guardadas en:\n  -> {users_csv}\n")
+        print(f"Métricas individuales por usuario ({len(df_users)} filas) guardadas en:\n  -> {users_csv}\n")
 
-    # Consolidate all model checkpoints into a single all_models.pt file
+    # Consolidate model checkpoints into all_models.pt
     if args.save_checkpoints:
         import torch
         chk_dir = Path(args.checkpoints_dir)
         chk_dir.mkdir(parents=True, exist_ok=True)
         all_models_dict = {}
-        for key, model_name, use_pog, label in BENCHMARK_CONFIGS:
+        for key, model_name, use_pog, label in configs_to_run:
             model_pt = chk_dir / f"{key}.pt"
             if model_pt.exists():
                 all_models_dict[key] = torch.load(model_pt, map_location="cpu")
         if all_models_dict:
             consolidated_pt = chk_dir / "all_models.pt"
             torch.save(all_models_dict, consolidated_pt)
-            print(f"Los 6 modelos consolidados se han guardado exitosamente en:\n  -> {consolidated_pt}\n")
+            print(f"Modelos consolidados ({len(all_models_dict)} variantes) guardados exitosamente en:\n  -> {consolidated_pt}\n")
 
 
 if __name__ == "__main__":

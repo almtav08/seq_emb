@@ -16,8 +16,8 @@ from seq_emb.experiments.kfold_runner import KFoldRunner
 
 def main():
     parser = argparse.ArgumentParser(description="Run sequential model K-Fold cross-validation.")
-    parser.add_argument("--model", type=str, required=True, choices=["caser", "grurec", "sasrec"],
-                        help="Model architecture to run.")
+    parser.add_argument("--model", type=str, required=True,
+                        help="Model architecture to run ('caser', 'grurec', 'sasrec', or 'all' for all 3).")
     parser.add_argument("--config", type=str, default="configs/default.yaml",
                         help="Path to YAML configuration file (default: configs/default.yaml).")
     parser.add_argument("--pog", action="store_true", default=True,
@@ -47,58 +47,64 @@ def main():
     epochs = args.epochs if args.epochs is not None else cfg.get("num_epochs", 500)
     batch_size = args.batch_size if args.batch_size is not None else cfg.get("batch_size", 4)
     splits = args.splits if args.splits is not None else cfg.get("n_splits", 5)
-    model_custom_params = cfg.get("models", {}).get(args.model, None)
+    models_cfg = cfg.get("models", {})
 
-    mode_label = "Con POG" if args.pog else "Sin POG"
-    print(f"\n{'='*60}")
-    print(f"Modelo: {args.model.upper()} ({mode_label}) | Estrategia: {args.strategy.upper()} | Seed: {seed} | Epochs: {epochs} | Batch: {batch_size}")
-    if model_custom_params:
-        print(f"Hiperparámetros óptimos ({args.model}): {model_custom_params}")
-    print(f"{'='*60}\n")
-
-    runner = KFoldRunner(seed=seed, device=device)
-    results = runner.run(
-        model_name=args.model,
-        use_pog=args.pog,
-        strategy=args.strategy,
-        n_splits=splits,
-        num_epochs=epochs,
-        batch_size=batch_size,
-        custom_params=model_custom_params,
-        local_window=args.local_window,
-        verbose=True,
-        save_checkpoints=args.save_checkpoints,
-        checkpoints_dir=args.checkpoints_dir,
-    )
-
-    strat_label = f"LOOCV ({results.get('n_students', 48)} Iteraciones)" if args.strategy == "loocv" else f"{args.splits} Folds"
-    print(f"\nResultados Promedio ({strat_label}):")
-    print("-" * 50)
-    for metric, val in results["mean"].items():
-        std_val = results["std"].get(metric, 0.0)
-        print(f"  {metric:<25}: {val:+.4f} ± {std_val:.4f}")
+    models_to_run = ["caser", "sasrec", "grurec"] if args.model.lower() == "all" else [args.model.lower()]
 
     import pandas as pd
+    runner = KFoldRunner(seed=seed, device=device)
 
-    if args.output:
-        out_path = Path(args.output)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(results, f, indent=4)
-        print(f"\nResultados guardados en: {out_path}")
-        csv_path = out_path.with_suffix(".csv")
-    else:
-        csv_path = project_root / "results" / f"user_metrics_{args.model}_{'pog' if args.pog else 'nopog'}_{args.strategy}.csv"
-        csv_path.parent.mkdir(parents=True, exist_ok=True)
+    for current_model in models_to_run:
+        model_custom_params = models_cfg.get(current_model, None)
+        mode_label = "Con POG" if args.pog else "Sin POG"
+        print(f"\n{'='*60}")
+        print(f"Modelo: {current_model.upper()} ({mode_label}) | Estrategia: {args.strategy.upper()} | Seed: {seed} | Epochs: {epochs} | Batch: {batch_size}")
+        if model_custom_params:
+            print(f"Hiperparámetros óptimos ({current_model}): {model_custom_params}")
+        print(f"{'='*60}\n")
 
-    user_rows = results.get("user_metrics", [])
-    if user_rows:
-        df_u = pd.DataFrame(user_rows)
-        df_u.insert(0, "model", args.model)
-        df_u.insert(1, "use_pog", args.pog)
-        df_u.insert(2, "strategy", args.strategy)
-        df_u.to_csv(csv_path, index=False)
-        print(f"Métricas individuales por usuario ({len(df_u)} usuarios) guardadas en:\n  -> {csv_path}\n")
+        results = runner.run(
+            model_name=current_model,
+            use_pog=args.pog,
+            strategy=args.strategy,
+            n_splits=splits,
+            num_epochs=epochs,
+            batch_size=batch_size,
+            custom_params=model_custom_params,
+            local_window=args.local_window,
+            verbose=True,
+            save_checkpoints=args.save_checkpoints,
+            checkpoints_dir=args.checkpoints_dir,
+        )
+
+        strat_label = f"LOOCV ({results.get('n_students', 48)} Iteraciones)" if args.strategy == "loocv" else f"{splits} Folds"
+        print(f"\nResultados Promedio ({strat_label}) - {current_model.upper()}:")
+        print("-" * 50)
+        for metric, val in results["mean"].items():
+            std_val = results["std"].get(metric, 0.0)
+            print(f"  {metric:<25}: {val:+.4f} ± {std_val:.4f}")
+
+        if args.output:
+            out_path = Path(args.output)
+            if len(models_to_run) > 1:
+                out_path = out_path.with_name(f"{out_path.stem}_{current_model}{out_path.suffix}")
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(results, f, indent=4)
+            print(f"\nResultados guardados en: {out_path}")
+            csv_path = out_path.with_suffix(".csv")
+        else:
+            csv_path = project_root / "results" / f"user_metrics_{current_model}_{'pog' if args.pog else 'nopog'}_{args.strategy}.csv"
+            csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+        user_rows = results.get("user_metrics", [])
+        if user_rows:
+            df_u = pd.DataFrame(user_rows)
+            df_u.insert(0, "model", current_model)
+            df_u.insert(1, "use_pog", args.pog)
+            df_u.insert(2, "strategy", args.strategy)
+            df_u.to_csv(csv_path, index=False)
+            print(f"Métricas individuales por usuario ({len(df_u)} usuarios) guardadas en:\n  -> {csv_path}\n")
 
 
 if __name__ == "__main__":
