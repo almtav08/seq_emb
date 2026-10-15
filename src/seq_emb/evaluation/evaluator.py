@@ -27,6 +27,8 @@ def evaluate_fold(
     top: int = 10,
     steps: int = 3,
     local_window: bool = False,
+    outcome_aware: bool = True,
+    weight_type: str = "inv_pos",
 ) -> Dict[str, float]:
     """
     Evaluate a trained model on the test partition of a fold.
@@ -36,14 +38,14 @@ def evaluate_fold(
     """
     model.eval()
 
-    # 1. Precompute latent embeddings for successful training students
+    # 1. Precompute latent embeddings for prototype training students
     user_embeddings: Dict[int, torch.Tensor] = {}
     user_paths: Dict[int, List[int]] = {}
 
     with torch.no_grad():
         for uid in train_keys:
-            if grades[uid] == 0:
-                continue  # Only successful students serve as recommendation prototypes
+            if outcome_aware and grades[uid] == 0:
+                continue  # Only successful students serve as recommendation prototypes when outcome_aware=True
 
             raw_path = paths[uid][:max_seq_len]
             seq_len = len(raw_path)
@@ -117,7 +119,7 @@ def evaluate_fold(
             # 1. Ranking evaluation (Next-Item Prediction)
             y_true = full_path[n_interactions:]
             recs = calc_recommendations(
-                user_embeddings, target_emb, user_paths, target_path, top=top
+                user_embeddings, target_emb, user_paths, target_path, top=top, weight_type=weight_type
             )
             true_set = y_true[: max(n_interactions // 5, 1)]
 
@@ -165,7 +167,7 @@ def evaluate_fold(
                     return
 
                 recs_sim = calc_recommendations(
-                    user_embeddings, current_emb, user_paths, current_path, top=top
+                    user_embeddings, current_emb, user_paths, current_path, top=top, weight_type=weight_type
                 )
 
                 for rec in recs_sim:

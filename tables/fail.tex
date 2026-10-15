@@ -1,0 +1,31 @@
+\begin{table}[th!]
+\centering
+\caption{Trajectory intervention metrics for failing students under LOOCV ($K=10$ and $N=3$), comparing the unassisted Naive Baseline (without closest passing peer selection) against the proposed recommendation models before and after applying POG embeddings. Increments $\Delta$ quantify changes in trajectory metrics.}
+\label{tab:resfail}
+\begin{tabular}{llccccc}
+\hline
+\textbf{Model / Strategy} & \textbf{Condition} & $\mathbf{CR}$ & $\mathbf{BR}$ & $\mathbf{RR}$ & $\mathbf{AE}$ & $\mathbf{N}$ \\
+\hline
+\multirow{1}{*}{\textbf{Naive Baseline}} 
+ & Base Value & \textit{0.3496} & \textit{0.1092} & \textit{0.0128} & \textit{0.3014} & \textit{0.6175} \\
+\hline
+\multirow{4}{*}{\textbf{Caser}} 
+ & Before & +0.0152 & -0.0043 & +0.0003 & -0.0078 & +0.0251 \\
+ & POG & +0.0152 & -0.0044 & +0.0004 & -0.0077 & +0.0266 \\
+ & $\Delta_{POG}$ & \textit{0.00\%} & \textit{-0.87\%} & \textit{+36.86\%} & \textit{+0.88\%} & \textit{+5.92\%} \\
+ & \textit{$\Delta_{Base}$} & \textit{+4.34\%} & \textit{-4.00\%} & \textit{+2.95\%} & \textit{-2.55\%} & \textit{+4.31\%} \\
+\hline
+\multirow{4}{*}{\textbf{SASRec}} 
+ & Before & +0.0152 & -0.0044 & +0.0002 & -0.0077 & +0.0291 \\
+ & POG & +0.0152 & -0.0045 & +0.0003 & -0.0075 & +0.0279 \\
+ & $\Delta_{POG}$ & \textit{0.00\%} & \textit{-1.75\%} & \textit{+16.00\%} & \textit{+1.61\%} & \textit{-4.31\%} \\
+ & \textit{$\Delta_{Base}$} & \textit{+4.34\%} & \textit{-4.10\%} & \textit{+2.17\%} & \textit{-2.50\%} & \textit{+4.52\%} \\
+\hline
+\multirow{4}{*}{\textbf{GRU4Rec}} 
+ & Before & +0.0152 & -0.0043 & +0.0004 & -0.0074 & +0.0234 \\
+ & POG & +0.0152 & -0.0044 & +0.0003 & -0.0074 & +0.0263 \\
+ & $\Delta_{POG}$ & \textit{0.00\%} & \textit{-3.64\%} & \textit{-6.23\%} & \textit{-0.56\%} & \textit{+12.23\%} \\
+ & \textit{$\Delta_{Base}$} & \textit{+4.34\%} & \textit{-4.07\%} & \textit{+2.63\%} & \textit{-2.45\%} & \textit{+4.26\%} \\
+\hline
+\end{tabular}
+\end{table}

@@ -1,6 +1,17 @@
-Configuración,Horizonte (N),Ponderación w(p),Coverage (↑),Backward (↓),Repeat (↓),Frac Allowed (↑),Novelty (↑),Δ % Coverage,Δ % Backward
-Base Factual en t_split (N=0),0,N/A,0.3404 (Base),0.1080 (Base),0.0132 (Base),0.3034 (Base),0.5444 (Base),0.00%,0.00%
-"Single-Step Horizon (N=1, w=1/(pos+1))",1,w(p) = 1/(pos + 1),0.3486 (+2.41%),0.1070 (-0.92%),0.0131,0.3007,0.6835,+2.41%,-0.92%
-"Proposed Horizon (N=3, w=1/(pos+1))",3,w(p) = 1/(pos + 1),0.3650 (+7.22%),0.1052 (-2.57%),0.0128,0.2961,0.7450,+7.22%,-2.57%
-"Uniform Weighting (N=3, w=1)",3,w(p) = 1.0,0.3650 (+7.22%),0.1045 (-3.23%),0.0128,0.2921,0.6311,+7.22%,-3.23%
-"Immediate Truncation (N=3, w_0)",3,w(p) = 1 if pos=0 else 0,0.3650 (+7.22%),0.1054 (-2.41%),0.0128,0.2994,0.7638,+7.22%,-2.41%
+Modelo,Configuración,Horizonte (N),Ponderación w(p),Coverage (↑),Backward (↓),Repeat (↓),Frac Allowed (↑),Novelty (↑),Δ % Coverage,Δ % Backward
+Baseline Factual,Base Factual en t_split (N=0),0,N/A,0.3404 (Base),0.1080 (Base),0.0132 (Base),0.3034 (Base),0.5444 (Base),0.00%,0.00%
+Caser,"Caser Proposed (N=3, w(p)=1/(pos+1))",3,w(p) = 1/(pos + 1),0.3650 (+7.22%),0.1045 (-3.23%),0.0128,0.2929,0.6023,+7.22%,-3.23%
+Caser,"Caser Uniform (N=3, w=1.0)",3,w(p) = 1.0 (Sin decay),0.3650 (+7.22%),0.1044 (-3.34%),0.0128,0.2919,0.5698,+7.22%,-3.34%
+Caser,"Caser Immediate Truncation (N=3, w_0)",3,w(p) = 1 si pos=0 else 0,0.3650 (+7.22%),0.1062 (-1.60%),0.0139,0.3007,0.6929,+7.22%,-1.60%
+Caser,"Caser Single-Step (N=1, w(p)=1/(pos+1))",1,w(p) = 1/(pos + 1),0.3486 (+2.41%),0.1070 (-0.92%),0.0131,0.3006,0.5912,+2.41%,-0.92%
+Caser,"Caser Single-Step Uniform (N=1, w=1.0)",1,w(p) = 1.0 (Sin decay),0.3486 (+2.41%),0.1067 (-1.21%),0.0131,0.2995,0.5619,+2.41%,-1.21%
+SASRec,"SASRec Proposed (N=3, w(p)=1/(pos+1))",3,w(p) = 1/(pos + 1),0.3650 (+7.22%),0.1051 (-2.69%),0.0130,0.2925,0.5797,+7.22%,-2.69%
+SASRec,"SASRec Uniform (N=3, w=1.0)",3,w(p) = 1.0 (Sin decay),0.3650 (+7.22%),0.1042 (-3.50%),0.0131,0.2922,0.5759,+7.22%,-3.50%
+SASRec,"SASRec Immediate Truncation (N=3, w_0)",3,w(p) = 1 si pos=0 else 0,0.3650 (+7.22%),0.1061 (-1.70%),0.0144,0.2998,0.6773,+7.22%,-1.70%
+SASRec,"SASRec Single-Step (N=1, w(p)=1/(pos+1))",1,w(p) = 1/(pos + 1),0.3486 (+2.41%),0.1070 (-0.92%),0.0133,0.2995,0.5798,+2.41%,-0.92%
+SASRec,"SASRec Single-Step Uniform (N=1, w=1.0)",1,w(p) = 1.0 (Sin decay),0.3486 (+2.41%),0.1067 (-1.21%),0.0134,0.2997,0.5669,+2.41%,-1.21%
+GRU4Rec,"GRU4Rec Proposed (N=3, w(p)=1/(pos+1))",3,w(p) = 1/(pos + 1),0.3650 (+7.22%),0.1045 (-3.23%),0.0130,0.2932,0.5847,+7.22%,-3.23%
+GRU4Rec,"GRU4Rec Uniform (N=3, w=1.0)",3,w(p) = 1.0 (Sin decay),0.3650 (+7.22%),0.1045 (-3.23%),0.0128,0.2920,0.5603,+7.22%,-3.23%
+GRU4Rec,"GRU4Rec Immediate Truncation (N=3, w_0)",3,w(p) = 1 si pos=0 else 0,0.3650 (+7.22%),0.1065 (-1.32%),0.0148,0.2993,0.7063,+7.22%,-1.32%
+GRU4Rec,"GRU4Rec Single-Step (N=1, w(p)=1/(pos+1))",1,w(p) = 1/(pos + 1),0.3486 (+2.41%),0.1070 (-0.92%),0.0133,0.3001,0.5855,+2.41%,-0.92%
+GRU4Rec,"GRU4Rec Single-Step Uniform (N=1, w=1.0)",1,w(p) = 1.0 (Sin decay),0.3486 (+2.41%),0.1070 (-0.92%),0.0131,0.2995,0.5472,+2.41%,-0.92%

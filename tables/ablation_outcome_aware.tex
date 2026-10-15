@@ -1,0 +1,21 @@
+\begin{table}[ht!]
+\centering
+\caption{Outcome-aware peer intervention ablation under LOOCV ($K=10$, $N=3$). Comparing unassisted Naive Baseline, Outcome-Aware (passing peers only), and Without Outcome-Aware (unfiltered peers).}
+\label{tab:ablation_outcome_aware}
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Strategy / Model} & \textbf{Outcome-Aware} & \textbf{CR} & \textbf{BR} & \textbf{RR} & \textbf{AE} & \textbf{N} \\
+\hline
+Naive Baseline (Trayectoria real sin intervención) & No & 0.3496 & 0.1092 & 0.0128 & 0.3014 & 0.6175 \\
+Caser (Con Outcome-Aware: Pares Aprobados) & Sí & 0.3650 & 0.1045 & 0.0128 & 0.2929 & 0.6023 \\
+Caser (Sin Outcome-Aware: Todos los Pares) & No & 0.3650 & 0.1086 & 0.0130 & 0.2953 & 0.6358 \\
+Caser (Control Negativo: Pares Suspensos) & Inverso & 0.3650 & 0.1084 & 0.0128 & 0.2959 & 0.6296 \\
+SASRec (Con Outcome-Aware: Pares Aprobados) & Sí & 0.3650 & 0.1051 & 0.0130 & 0.2925 & 0.5797 \\
+SASRec (Sin Outcome-Aware: Todos los Pares) & No & 0.3650 & 0.1055 & 0.0128 & 0.2935 & 0.6138 \\
+SASRec (Control Negativo: Pares Suspensos) & Inverso & 0.3650 & 0.1065 & 0.0130 & 0.2948 & 0.6204 \\
+GRU4Rec (Con Outcome-Aware: Pares Aprobados) & Sí & 0.3650 & 0.1045 & 0.0130 & 0.2932 & 0.5847 \\
+GRU4Rec (Sin Outcome-Aware: Todos los Pares) & No & 0.3650 & 0.1050 & 0.0130 & 0.2952 & 0.6083 \\
+GRU4Rec (Control Negativo: Pares Suspensos) & Inverso & 0.3650 & 0.1054 & 0.0128 & 0.2938 & 0.6254 \\
+\hline
+\end{tabular}
+\end{table}

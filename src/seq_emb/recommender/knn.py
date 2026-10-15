@@ -23,6 +23,7 @@ def calc_recommendations(
     target_path: List[int],
     top: int = 10,
     similarity_exponent: float = 1.0,
+    weight_type: str = "inv_pos",
 ) -> List[int]:
     """
     Generate top-k resource recommendations for a target student using
@@ -35,6 +36,10 @@ def calc_recommendations(
         target_path: Current interaction sequence of the target student.
         top: Number of recommendations to generate.
         similarity_exponent: Exponent for weighting cosine similarities.
+        weight_type: Temporal weighting function for future items:
+                     'inv_pos' (w = 1/(idx+1)), 'uniform' (w = 1.0),
+                     'immediate' (w = 1 if first next item else 0),
+                     'inv_rel_pos' (w = 1/(pos+1) relative to target).
 
     Returns:
         Ordered list of recommended resource IDs (top-k).
@@ -72,7 +77,17 @@ def calc_recommendations(
         # Accumulate score for upcoming items in neighbor's trajectory
         for idx in range(last_item_idx, len(neig_path)):
             item_id = neig_path[idx]
-            recommendations[item_id] += weighted_similarity * (1.0 / (idx + 1))
+            pos = idx - last_item_idx
+            if weight_type == "uniform":
+                w = 1.0
+            elif weight_type == "immediate":
+                w = 1.0 if pos == 0 else 0.0
+            elif weight_type == "inv_rel_pos":
+                w = 1.0 / (pos + 1)
+            else:  # default 'inv_pos'
+                w = 1.0 / (idx + 1)
+
+            recommendations[item_id] += weighted_similarity * w
             if recommendations[item_id] > max_preference:
                 max_preference = recommendations[item_id]
 

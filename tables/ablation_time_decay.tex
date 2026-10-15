@@ -1,0 +1,27 @@
+\begin{table}[ht!]
+\centering
+\caption{Temporal projection (Time-Decay) and simulation horizon ablation for failing student trajectories.}
+\label{tab:ablation_time_decay}
+\begin{tabular}{lcccc}
+\hline
+\textbf{Configuration} & \textbf{Horizon ($N$)} & \textbf{Decay $w(p)$} & \textbf{CR} & \textbf{BR} \\
+\hline
+Base Factual en t_split (N=0) & 0 & N/A & 0.3404 & 0.1080 \\
+Caser Proposed (N=3, w(p)=1/(pos+1)) & 3 & w(p) = 1/(pos + 1) & 0.3650 & 0.1045 \\
+Caser Uniform (N=3, w=1.0) & 3 & w(p) = 1.0 (Sin decay) & 0.3650 & 0.1044 \\
+Caser Immediate Truncation (N=3, w_0) & 3 & w(p) = 1 si pos=0 else 0 & 0.3650 & 0.1062 \\
+Caser Single-Step (N=1, w(p)=1/(pos+1)) & 1 & w(p) = 1/(pos + 1) & 0.3486 & 0.1070 \\
+Caser Single-Step Uniform (N=1, w=1.0) & 1 & w(p) = 1.0 (Sin decay) & 0.3486 & 0.1067 \\
+SASRec Proposed (N=3, w(p)=1/(pos+1)) & 3 & w(p) = 1/(pos + 1) & 0.3650 & 0.1051 \\
+SASRec Uniform (N=3, w=1.0) & 3 & w(p) = 1.0 (Sin decay) & 0.3650 & 0.1042 \\
+SASRec Immediate Truncation (N=3, w_0) & 3 & w(p) = 1 si pos=0 else 0 & 0.3650 & 0.1061 \\
+SASRec Single-Step (N=1, w(p)=1/(pos+1)) & 1 & w(p) = 1/(pos + 1) & 0.3486 & 0.1070 \\
+SASRec Single-Step Uniform (N=1, w=1.0) & 1 & w(p) = 1.0 (Sin decay) & 0.3486 & 0.1067 \\
+GRU4Rec Proposed (N=3, w(p)=1/(pos+1)) & 3 & w(p) = 1/(pos + 1) & 0.3650 & 0.1045 \\
+GRU4Rec Uniform (N=3, w=1.0) & 3 & w(p) = 1.0 (Sin decay) & 0.3650 & 0.1045 \\
+GRU4Rec Immediate Truncation (N=3, w_0) & 3 & w(p) = 1 si pos=0 else 0 & 0.3650 & 0.1065 \\
+GRU4Rec Single-Step (N=1, w(p)=1/(pos+1)) & 1 & w(p) = 1/(pos + 1) & 0.3486 & 0.1070 \\
+GRU4Rec Single-Step Uniform (N=1, w=1.0) & 1 & w(p) = 1.0 (Sin decay) & 0.3486 & 0.1070 \\
+\hline
+\end{tabular}
+\end{table}

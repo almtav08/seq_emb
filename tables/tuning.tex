@@ -1,0 +1,32 @@
+\begin{table}[ht!]
+\centering
+\caption{Taguchi experimental designs, explored factor levels, percentage of variance explained (ANOVA), and optimal selected configurations for each sequential architecture.}
+\label{tab:hyperparameters}
+\begin{tabular}{lllcc}
+\hline
+\textbf{Model} & \textbf{Hyperparameter} & \textbf{Explored Levels} & \textbf{ANOVA Var. (\%)} & \textbf{Optimal} \\
+\hline
+\multirow{5}{*}{\textbf{Caser}} 
+ & Learning Rate & $\{10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}\}$ & 23.0\% & $10^{-4}$ \\
+ & Optimizer & $\{\text{SGD}, \text{Adam}, \text{AdamW}, \text{Adagrad}\}$ & 32.4\% & Adam \\
+ & Vertical Filters & $\{2, 4, 8, 16\}$ & 17.4\% & 4 \\
+ & Horizontal Filters & $\{2, 4, 8, 16\}$ & 12.1\% & 16 \\
+ & Horizontal Filter Sizes & $\{(2,3,4), (3,4,5), (4,5,6), (5,6,7)\}$ & 15.1\% & $(5,6,7)$ \\
+\hline
+\multirow{6}{*}{\textbf{GRU4Rec}} 
+ & Pooling & $\{\text{mean}, \text{last}\}$ & 13.7\% & last \\
+ & Number of Layers & $\{2, 4, 8, 10\}$ & 2.2\% & 8 \\
+ & Learning Rate & $\{10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}\}$ & 8.6\% & $10^{-5}$ \\
+ & Optimizer & $\{\text{SGD}, \text{Adam}, \text{AdamW}, \text{Adagrad}\}$ & 7.2\% & SGD \\
+ & Dropout & $\{0.10, 0.15, 0.20, 0.25\}$ & 1.2\% & 0.15 \\
+ & Hidden Dimension & $\{16, 32, 64, 128\}$ & 7.9\% & 16 \\
+\hline
+\multirow{5}{*}{\textbf{SASRec}} 
+ & Attention Heads & $\{2, 3, 5, 10\}$ & 5.3\% & 3 \\
+ & Pooling & $\{\text{mean}, \text{last}\}$ & 8.7\% & mean \\
+ & Learning Rate & $\{10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}\}$ & 10.8\% & $10^{-5}$ \\
+ & Optimizer & $\{\text{SGD}, \text{Adam}, \text{AdamW}, \text{Adagrad}\}$ & 5.5\% & Adagrad \\
+ & Dropout & $\{0.10, 0.15, 0.20, 0.25\}$ & 1.4\% & 0.10 \\
+\hline
+\end{tabular}
+\end{table}
