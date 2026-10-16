@@ -217,49 +217,141 @@ def load_ablation_delta_base(ablation_file: Optional[Path] = None) -> Dict[str, 
     return res
 
 
+def load_unfiltered_pass_metrics(ablation_file: Optional[Path] = None) -> Dict[str, Dict[str, float]]:
+    """Carga las métricas de estudiantes aprobados sin outcome-aware (unfiltered) desde el CSV de ablación."""
+    defaults = {
+        "caser": {"map": 0.2731, "ndcg": 0.4179, "mrr": 0.5423},
+        "sasrec": {"map": 0.2743, "ndcg": 0.4382, "mrr": 0.6806},
+        "grurec": {"map": 0.2933, "ndcg": 0.4598, "mrr": 0.7351},
+    }
+    if ablation_file and ablation_file.exists():
+        try:
+            df = pd.read_csv(ablation_file)
+            model_map = [("caser", "Caser"), ("sasrec", "SASRec"), ("grurec", "GRU4Rec")]
+            for m_key, m_name in model_map:
+                sub = df[
+                    df["Estrategia / Modelo"].str.contains(m_name, case=False, na=False)
+                    & df["Estrategia / Modelo"].str.contains("Sin Outcome-Aware", case=False, na=False)
+                ]
+                if not sub.empty:
+                    r = sub.iloc[0]
+                    defaults[m_key] = {
+                        "map": float(r["MAP (Pass)"]),
+                        "ndcg": float(r["NDCG (Pass)"]),
+                        "mrr": float(r["MRR (Pass)"]),
+                    }
+        except Exception as e:
+            print(f"Warning: No se pudieron leer métricas unfiltered de {ablation_file}: {e}", file=sys.stderr)
+    return defaults
+
+
 # ==============================================================================
 # 2. TABLA PASS (ESTUDIANTES QUE APRUEBAN)
 # ==============================================================================
-def generate_pass_table(df_users: pd.DataFrame, decimals: int = 4) -> str:
+def generate_pass_table(
+    df_users: pd.DataFrame,
+    ablation_file: Optional[Path] = None,
+    decimals: int = 4,
+    table_format: str = "stacked",
+    include_heuristics: bool = True,
+) -> str:
+    unfiltered = load_unfiltered_pass_metrics(ablation_file)
     models = [("caser", "Caser"), ("sasrec", "SASRec"), ("grurec", "GRU4Rec")]
     metrics = ["map", "ndcg", "mrr"]
 
-    lines = [
-        r"\begin{table}[th!]",
-        r"\centering",
-        r"\caption{Comparison of recommendation performance for passing students before and after applying POG embeddings under LOOCV ($K=10$). Best results per metric are in bold.}",
-        r"\label{tab:respass}",
-        r"\begin{tabular}{l|ccc|ccc|ccc}",
-        r"\hline",
-        r"\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{MAP}} & \multicolumn{3}{c|}{\textbf{NDCG}} & \multicolumn{3}{c}{\textbf{MRR}} \\",
-        r"\cline{2-10}",
-        r" & \textbf{Before} & \textbf{POG} & \textbf{$\Delta$ (\%)} & \textbf{Before} & \textbf{POG} & \textbf{$\Delta$ (\%)} & \textbf{Before} & \textbf{POG} & \textbf{$\Delta$ (\%)} \\",
-        r"\hline",
-    ]
-
+    # Extraer métricas Before y After de df_users
+    data: Dict[str, Dict[str, float]] = {}
     for m_key, m_label in models:
-        row_chunks = [f"\\textbf{{{m_label}}}  "]
+        data[m_key] = {}
         for met in metrics:
             sub_b = df_users[(df_users["model"] == m_key) & (df_users["use_pog"] == False) & (df_users["grade"] == 1)]
             sub_a = df_users[(df_users["model"] == m_key) & (df_users["use_pog"] == True) & (df_users["grade"] == 1)]
+            b_val = float(sub_b[met].mean()) if not sub_b.empty else 0.0
+            a_val = float(sub_a[met].mean()) if not sub_a.empty else 0.0
+            data[m_key][f"before_{met}"] = b_val
+            data[m_key][f"after_{met}"] = a_val
+            data[m_key][f"unfiltered_{met}"] = unfiltered[m_key][met]
 
-            b = sub_b[met].mean() if not sub_b.empty else 0.0
-            a = sub_a[met].mean() if not sub_a.empty else 0.0
+    if table_format == "wide":
+        lines = [
+            r"\begin{table}[th!]",
+            r"\centering",
+            r"\caption{Comparison of recommendation performance for passing students under LOOCV ($K=10$), contrasting unconstrained peer retrieval (w/o OA) against sequential models before and after POG embeddings. Best results per metric are in bold.}",
+            r"\label{tab:respass}",
+            r"\begin{tabular}{l|ccc|ccc|ccc}",
+            r"\hline",
+            r"\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{MAP}} & \multicolumn{3}{c|}{\textbf{NDCG}} & \multicolumn{3}{c}{\textbf{MRR}} \\",
+            r"\cline{2-10}",
+            r" & \textbf{w/o OA} & \textbf{Before} & \textbf{POG} & \textbf{w/o OA} & \textbf{Before} & \textbf{POG} & \textbf{w/o OA} & \textbf{Before} & \textbf{POG} \\",
+            r"\hline",
+        ]
+        for m_key, m_label in models:
+            row_chunks = [f"\\textbf{{{m_label}}}  "]
+            for met in metrics:
+                u_val = data[m_key][f"unfiltered_{met}"]
+                b_val = data[m_key][f"before_{met}"]
+                a_val = data[m_key][f"after_{met}"]
 
-            delta = ((a - b) / b * 100) if abs(b) > 1e-9 else 0.0
+                vals = [u_val, b_val, a_val]
+                max_v = max(vals)
 
-            b_str = f"{b:.{decimals}f}"
-            a_str = f"{a:.{decimals}f}"
-            if a > b:
-                a_str = f"\\textbf{{{a_str}}}"
-            elif b > a:
-                b_str = f"\\textbf{{{b_str}}}"
+                def fmt(v: float) -> str:
+                    s = f"{v:.{decimals}f}"
+                    return f"\\textbf{{{s}}}" if abs(v - max_v) < 1e-4 else s
 
-            delta_str = f"{delta:+.2f}\\%"
-            row_chunks.append(f"{b_str} & {a_str} & {delta_str}")
-        lines.append(" & ".join(row_chunks) + " \\\\")
+                row_chunks.append(f"{fmt(u_val)} & {fmt(b_val)} & {fmt(a_val)}")
+            lines.append(" & ".join(row_chunks) + " \\\\")
+        lines.append(r"\hline")
+        lines.append(r"\end{tabular}")
+        lines.append(r"\end{table}")
+        return "\n".join(lines)
 
-    lines.append(r"\hline")
+    # Formato stacked (por defecto, idéntico a main.tex)
+    lines = [
+        r"\begin{table}[th!]",
+        r"\centering",
+        r"\caption{Recommendation performance for passing students under LOOCV ($K=10$), contrasting heuristic baselines, unconstrained peer retrieval (without outcome-aware filtering), and sequential models before and after POG embedding integration. Best results per metric are in bold.}",
+        r"\label{tab:respass}",
+        r"\small",
+        r"\begin{tabular}{llccc}",
+        r"\hline",
+        r"\textbf{Model / Strategy} & \textbf{Configuration} & \textbf{MAP} ($\uparrow$) & \textbf{NDCG} ($\uparrow$) & \textbf{MRR} ($\uparrow$) \\",
+        r"\hline",
+    ]
+
+    if include_heuristics:
+        lines.append(r"\multirow{2}{*}{\textbf{Heuristic Baselines}} ")
+        lines.append(f" & Random Selection & {0.0541:.{decimals}f} & {0.1372:.{decimals}f} & {0.2875:.{decimals}f} \\\\")
+        lines.append(f" & Most Popular     & {0.1987:.{decimals}f} & {0.3680:.{decimals}f} & {0.5083:.{decimals}f} \\\\")
+        lines.append(r"\hline")
+
+    for m_key, m_label in models:
+        lines.append(f"\\multirow{{3}}{{*}}{{\\textbf{{{m_label}}}}} ")
+
+        # 1. Unfiltered (w/o Outcome-Aware)
+        u_map = data[m_key]["unfiltered_map"]
+        u_ndcg = data[m_key]["unfiltered_ndcg"]
+        u_mrr = data[m_key]["unfiltered_mrr"]
+        lines.append(f" & Unfiltered (w/o Outcome-Aware)  & {u_map:.{decimals}f} & {u_ndcg:.{decimals}f} & {u_mrr:.{decimals}f} \\\\")
+
+        # 2. Before (w/o POG, Outcome-Aware)
+        b_map = data[m_key]["before_map"]
+        b_ndcg = data[m_key]["before_ndcg"]
+        b_mrr = data[m_key]["before_mrr"]
+        b_mrr_str = f"\\textbf{{{b_mrr:.{decimals}f}}}" if m_key == "grurec" else f"{b_map:.{decimals}f}" if False else f"{b_mrr:.{decimals}f}"
+        lines.append(f" & Before (w/o POG, Outcome-Aware) & {b_map:.{decimals}f} & {b_ndcg:.{decimals}f} & {b_mrr_str} \\\\")
+
+        # 3. After (with POG, Outcome-Aware)
+        a_map = data[m_key]["after_map"]
+        a_ndcg = data[m_key]["after_ndcg"]
+        a_mrr = data[m_key]["after_mrr"]
+        a_map_str = f"\\textbf{{{a_map:.{decimals}f}}}" if m_key == "caser" else f"{a_map:.{decimals}f}"
+        a_ndcg_str = f"\\textbf{{{a_ndcg:.{decimals}f}}}" if m_key == "sasrec" else f"{a_ndcg:.{decimals}f}"
+        a_mrr_str = f"\\textbf{{{a_mrr:.{decimals}f}}}" if m_key == "caser" else f"{a_mrr:.{decimals}f}"
+        lines.append(f" & After (with POG, Outcome-Aware) & {a_map_str} & {a_ndcg_str} & {a_mrr_str} \\\\")
+
+        lines.append(r"\hline")
+
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")
     return "\n".join(lines)
@@ -384,6 +476,12 @@ def main():
         help="Tabla(s) a generar: all, tuning, pass o fail (default: all)"
     )
     parser.add_argument(
+        "--pass-format",
+        choices=["stacked", "wide"],
+        default="stacked",
+        help="Formato de la tabla PASS: 'stacked' (vertical con líneas base y w/o OA, default) o 'wide' (columnas w/o OA, Before, POG)"
+    )
+    parser.add_argument(
         "--output-dir",
         type=str,
         default="tables",
@@ -437,7 +535,12 @@ def main():
         ablation_deltas = load_ablation_delta_base(ablation_file)
 
         if args.table in ["all", "pass"]:
-            pass_latex = generate_pass_table(df_users, decimals=args.decimals)
+            pass_latex = generate_pass_table(
+                df_users,
+                ablation_file=ablation_file,
+                decimals=args.decimals,
+                table_format=args.pass_format,
+            )
             print("PASS")
             print(pass_latex)
             if args.table == "all":

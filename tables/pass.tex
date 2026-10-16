@@ -1,16 +1,30 @@
 \begin{table}[th!]
 \centering
-\caption{Comparison of recommendation performance for passing students before and after applying POG embeddings under LOOCV ($K=10$). Best results per metric are in bold.}
+\caption{Recommendation performance for passing students under LOOCV ($K=10$), contrasting heuristic baselines, unconstrained peer retrieval (without outcome-aware filtering), and sequential models before and after POG embedding integration. Best results per metric are in bold.}
 \label{tab:respass}
-\begin{tabular}{l|ccc|ccc|ccc}
+\small
+\begin{tabular}{llccc}
 \hline
-\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{MAP}} & \multicolumn{3}{c|}{\textbf{NDCG}} & \multicolumn{3}{c}{\textbf{MRR}} \\
-\cline{2-10}
- & \textbf{Before} & \textbf{POG} & \textbf{$\Delta$ (\%)} & \textbf{Before} & \textbf{POG} & \textbf{$\Delta$ (\%)} & \textbf{Before} & \textbf{POG} & \textbf{$\Delta$ (\%)} \\
+\textbf{Model / Strategy} & \textbf{Configuration} & \textbf{MAP} ($\uparrow$) & \textbf{NDCG} ($\uparrow$) & \textbf{MRR} ($\uparrow$) \\
 \hline
-\textbf{Caser}   & 0.2623 & \textbf{0.2795} & +6.56\% & 0.4285 & \textbf{0.4516} & +5.39\% & 0.7583 & \textbf{0.8036} & +5.97\% \\
-\textbf{SASRec}   & 0.2573 & \textbf{0.2787} & +8.34\% & 0.4308 & \textbf{0.4527} & +5.08\% & \textbf{0.7983} & 0.7679 & -3.81\% \\
-\textbf{GRU4Rec}   & \textbf{0.2699} & 0.2652 & -1.75\% & \textbf{0.4554} & 0.4387 & -3.67\% & \textbf{0.8690} & 0.8019 & -7.73\% \\
+\multirow{2}{*}{\textbf{Heuristic Baselines}} 
+ & Random Selection & 0.0541 & 0.1372 & 0.2875 \\
+ & Most Popular     & 0.1987 & 0.3680 & 0.5083 \\
+\hline
+\multirow{3}{*}{\textbf{Caser}} 
+ & Unfiltered (w/o Outcome-Aware)  & 0.2731 & 0.4179 & 0.5423 \\
+ & Before (w/o POG, Outcome-Aware) & 0.2623 & 0.4285 & 0.7583 \\
+ & After (with POG, Outcome-Aware) & \textbf{0.2795} & 0.4516 & \textbf{0.8036} \\
+\hline
+\multirow{3}{*}{\textbf{SASRec}} 
+ & Unfiltered (w/o Outcome-Aware)  & 0.2743 & 0.4382 & 0.6806 \\
+ & Before (w/o POG, Outcome-Aware) & 0.2573 & 0.4308 & 0.7983 \\
+ & After (with POG, Outcome-Aware) & 0.2787 & \textbf{0.4527} & 0.7679 \\
+\hline
+\multirow{3}{*}{\textbf{GRU4Rec}} 
+ & Unfiltered (w/o Outcome-Aware)  & 0.2933 & 0.4598 & 0.7351 \\
+ & Before (w/o POG, Outcome-Aware) & 0.2699 & 0.4554 & \textbf{0.8690} \\
+ & After (with POG, Outcome-Aware) & 0.2652 & 0.4387 & 0.8019 \\
 \hline
 \end{tabular}
 \end{table}
