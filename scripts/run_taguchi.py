@@ -21,15 +21,15 @@ ALL_MODELS = ["caser", "grurec", "sasrec"]
 
 def print_taguchi_report(analysis: dict, model_label: str):
     print("\n" + "=" * 95)
-    print(f"REPORTE DE ANÁLISIS DE TAGUCHI — {model_label.upper()}")
+    print(f"TAGUCHI ANALYSIS REPORT — {model_label.upper()}")
     print("=" * 95)
 
-    print("\n1. Factores e impacto (ANOVA - % Varianza Explicada):")
+    print("\n1. Factors and impact (ANOVA - % Explained Variance):")
     print("-" * 95)
     best_df = analysis["best_levels"]
     print(best_df.to_string(index=False))
 
-    print("\n2. Niveles óptimos recomendados por factor (máximo Z-score combinado):")
+    print("\n2. Recommended optimal levels per factor (maximum combined Z-score):")
     print("-" * 95)
     recs = []
     for _, row in best_df.iterrows():
@@ -37,7 +37,7 @@ def print_taguchi_report(analysis: dict, model_label: str):
     print(" | ".join(recs))
 
     pareto_df = analysis["pareto_front"]
-    print(f"\n3. Frente de Pareto multiobjetivo ({len(pareto_df)} configuraciones no dominadas):")
+    print(f"\n3. Multi-objective Pareto Front ({len(pareto_df)} non-dominated configurations):")
     print("-" * 95)
     pareto_cols = [c for c in pareto_df.columns if not c.startswith("z_") and c != "score_combined"]
     print(pareto_df[pareto_cols].to_string(index=False))
@@ -48,9 +48,9 @@ def print_global_summary(summary_records: List[Dict[str, Any]]):
     if not summary_records:
         return
     print("\n" + "#" * 95)
-    print("RESUMEN GLOBAL DEL TUNING (TODOS LOS MODELOS)")
+    print("GLOBAL TUNING SUMMARY (ALL MODELS)")
     print("#" * 95)
-    header = f"{'Modelo':<12} | {'Pareto Runs':<12} | {'Mejor Factor y Nivel Óptimo':<60}"
+    header = f"{'Model':<12} | {'Pareto Runs':<12} | {'Best Factor & Optimal Level':<60}"
     print(header)
     print("-" * 95)
     for rec in summary_records:
@@ -85,10 +85,10 @@ def process_single_model(
             ]
             csv_file = next((c for c in candidates if c.exists()), None)
             if csv_file is None:
-                print(f"Aviso: No se encontró CSV de resultados para {model_name} en {analyze_only_path}")
+                print(f"Warning: No results CSV found for {model_name} in {analyze_only_path}")
                 return None
 
-        print(f"\nCargando resultados de {label} desde {csv_file}...")
+        print(f"\nLoading results for {label} from {csv_file}...")
         results_df = pd.read_csv(csv_file)
     else:
         runner = TaguchiRunner(seed=seed, device=device, n_jobs=n_jobs)
@@ -107,7 +107,7 @@ def process_single_model(
 
         raw_results_file = out_dir / f"{label}_fine_results.csv"
         results_df.to_csv(raw_results_file, index=False)
-        print(f"\nResultados brutos de Taguchi guardados en: {raw_results_file}")
+        print(f"\nRaw Taguchi results saved to: {raw_results_file}")
 
     # Run analysis
     analyzer = TaguchiAnalyzer(model_name=model_name, results_df=results_df)
@@ -143,7 +143,7 @@ def main():
     parser.add_argument("--pog", action="store_true", default=True, help="Use RotatE POG embeddings.")
     parser.add_argument("--no-pog", dest="pog", action="store_false", help="Use learnable item embeddings.")
     parser.add_argument("--all-variants", action="store_true", default=False,
-                        help="Run both 'con POG' and 'sin POG' variants for each selected model.")
+                        help="Run both 'with POG' and 'without POG' variants for each selected model.")
     parser.add_argument("--strategy", type=str, default="loocv", choices=["loocv", "kfold"],
                         help="Cross-validation strategy: 'loocv' (Leave-One-Out) or 'kfold' (Stratified K-Fold). Default: loocv.")
     parser.add_argument("--epochs", type=int, default=500, help="Training epochs per run (default: 500).")
@@ -167,11 +167,11 @@ def main():
     analyze_path = Path(args.analyze_only) if args.analyze_only else None
 
     print("\n" + "=" * 95)
-    print("CONFIGURACIÓN DE TUNING CON TAGUCHI")
-    print(f"Modelos: {', '.join(models_to_run).upper()}")
-    print(f"Modalidades: {'Con POG y Sin POG' if args.all_variants else ('Con POG' if args.pog else 'Sin POG')}")
-    print(f"Estrategia: {args.strategy.upper()} | Épocas: {args.epochs} | Folds (si kfold): {args.splits} | Workers: {args.jobs} | Semilla: {args.seed} | Dispositivo: {args.device}")
-    print(f"Directorio de salida: {out_dir}")
+    print("TAGUCHI TUNING CONFIGURATION")
+    print(f"Models: {', '.join(models_to_run).upper()}")
+    print(f"Modalities: {'With POG and Without POG' if args.all_variants else ('With POG' if args.pog else 'Without POG')}")
+    print(f"Strategy: {args.strategy.upper()} | Epochs: {args.epochs} | Folds (if kfold): {args.splits} | Workers: {args.jobs} | Seed: {args.seed} | Device: {args.device}")
+    print(f"Output directory: {out_dir}")
     print("=" * 95 + "\n")
 
     summary_records = []
@@ -194,7 +194,7 @@ def main():
                 summary_records.append(res)
 
     print_global_summary(summary_records)
-    print(f"Tuning y análisis completados. Archivos guardados en: {out_dir}\n")
+    print(f"Tuning and analysis completed. Files saved to: {out_dir}\n")
 
 
 if __name__ == "__main__":

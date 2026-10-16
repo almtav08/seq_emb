@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Suite de Estudios de Ablación para SeqEmb utilizando Checkpoints Entrenados.
+"""Ablation Study Suite for SeqEmb using Pretrained Checkpoints.
 
-Este script evalúa rigurosamente el impacto de:
-1. Ablación de Intervención Outcome-Aware:
-   - Baseline Factual Naive (Trayectoria real sin intervención pedagógica).
-   - Con Outcome-Aware (Pares Aprobados): Solo estudiantes con grade=1 sirven de prototipos.
-   - Sin Outcome-Aware (Ablación / Todos los Pares): Todos los estudiantes (aprobados y suspensos).
-   - Anti-Outcome / Pares Suspensos (Control negativo): Solo estudiantes con grade=0.
-2. Ablación de Mecanismo de Proyección Temporal (Time-Decay) y Horizonte de Simulación (N=1 vs N=3):
-   - Línea base factual en t_split (N=0).
-   - Time-Decay Posicional Decreciente (w(p) = 1/(pos + 1), N=3).
-   - Ponderación Uniforme / Sin Time-Decay (w(p) = 1.0, N=3).
-   - Truncamiento Inmediato / Next-Step Only (w_0, N=3).
-   - Single-Step Horizon con Time-Decay (w(p) = 1/(pos + 1), N=1).
-   - Single-Step Horizon Uniforme (w(p) = 1.0, N=1).
+This script rigorously evaluates the impact of:
+1. Outcome-Aware Peer Intervention Ablation:
+   - Factual Naive Baseline (Real unassisted trajectory without pedagogical intervention).
+   - With Outcome-Aware (Passing Peers): Only students with grade=1 serve as recommendation prototypes.
+   - Without Outcome-Aware (Ablation / All Peers): All students (passing and failing).
+   - Anti-Outcome / Failing Peers (Negative control): Only students with grade=0.
+2. Temporal Projection Mechanism (Time-Decay) and Simulation Horizon Ablation (N=1 vs N=3):
+   - Factual baseline at t_split (N=0).
+   - Decreasing Positional Time-Decay (w(p) = 1/(pos + 1), N=3).
+   - Uniform Weighting / Without Time-Decay (w(p) = 1.0, N=3).
+   - Immediate Truncation / Next-Step Only (w_0, N=3).
+   - Single-Step Horizon with Time-Decay (w(p) = 1/(pos + 1), N=1).
+   - Single-Step Uniform Horizon (w(p) = 1.0, N=1).
 """
 
 import argparse
@@ -27,7 +27,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-# Añadir src al path
+# Add src to pythonpath
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent
 sys.path.insert(0, str(project_root / "src"))
@@ -40,7 +40,7 @@ from seq_emb.recommender.knn import calc_recommendations
 
 
 def format_table(headers: List[str], rows: List[List[str]], title: str = "") -> str:
-    """Formatea una tabla en texto plano para visualización en terminal."""
+    """Formats a plain-text table for terminal display."""
     col_widths = [len(h) for h in headers]
     for row in rows:
         for i, val in enumerate(row):
@@ -73,7 +73,7 @@ def get_checkpoint_for_fold(
     model_name: str,
     fold_idx: int,
 ) -> Optional[Path]:
-    """Localiza el checkpoint del modelo para un pliegue específico o el consolidado."""
+    """Locates model checkpoint for a specific fold or consolidated file."""
     tag = f"{model_name}_pog"
     fold_file = checkpoints_dir / tag / f"fold_{fold_idx}.pt"
     if fold_file.exists():
@@ -94,7 +94,7 @@ def run_full_ablation_suite(
     top_k: int = 10,
     steps: int = 3,
 ):
-    """Ejecuta los dos estudios de ablación sobre todos los modelos indicados usando sus checkpoints."""
+    """Runs both ablation studies across all specified models using their checkpoints."""
     loader = DataLoader()
     data = loader.load_all()
 
@@ -103,7 +103,7 @@ def run_full_ablation_suite(
     else:
         device = torch.device(device_name)
 
-    print(f"\n[SeqEmb Ablation Suite] Dispositivo: {device} | Modelos: {[m.upper() for m in models]}")
+    print(f"\n[SeqEmb Ablation Suite] Device: {device} | Models: {[m.upper() for m in models]}")
     embedder = loader.load_graph_embedder(device)
 
     paths = data["paths"]
@@ -120,9 +120,9 @@ def run_full_ablation_suite(
     pass_uids = [u for u in student_ids if grades[u] == 1]
 
     # ==========================================================================
-    # 0. LÍNEAS BASE FACTUALES REALES
+    # 0. REAL FACTUAL BASELINES
     # ==========================================================================
-    # A. Trayectoria factual de suspensos con N pasos reales (Naive Baseline para Estudio 1)
+    # A. Factual trajectory of failing students with N real steps (Naive Baseline for Study 1)
     naive_metrics = []
     for uid in fail_uids:
         full_path = paths[uid]
@@ -141,7 +141,7 @@ def run_full_ablation_suite(
         "novelty": float(np.mean([m["novelty"] for m in naive_metrics])),
     }
 
-    # B. Trayectoria factual observada en t_split (N=0 para Estudio 2)
+    # B. Factual trajectory observed at t_split (N=0 for Study 2)
     t_split_metrics = []
     for uid in fail_uids:
         full_path = paths[uid]
@@ -160,13 +160,13 @@ def run_full_ablation_suite(
         "novelty": float(np.mean([m["novelty"] for m in t_split_metrics])),
     }
 
-    # Contenedores para filas de resultados
+    # Result row containers
     rows_study1: List[Dict[str, Any]] = []
     rows_study2: List[Dict[str, Any]] = []
 
-    # Fila Naive Baseline para Estudio 1
+    # Naive Baseline row for Study 1
     rows_study1.append({
-        "Estrategia / Modelo": "Naive Baseline (Trayectoria real sin intervención)",
+        "Strategy / Model": "Naive Baseline (Real unassisted trajectory)",
         "Outcome-Aware?": "No",
         "Coverage (↑)": f"{naive_base['coverage']:.4f} (Base)",
         "Backward (↓)": f"{naive_base['backward']:.4f} (Base)",
@@ -183,12 +183,12 @@ def run_full_ablation_suite(
         "MRR (Pass)": "N/A",
     })
 
-    # Fila Base Factual N=0 para Estudio 2
+    # Factual Base N=0 row for Study 2
     rows_study2.append({
-        "Modelo": "Baseline Factual",
-        "Configuración": "Base Factual en t_split (N=0)",
-        "Horizonte (N)": 0,
-        "Ponderación w(p)": "N/A",
+        "Model": "Factual Baseline",
+        "Configuration": "Factual Base at t_split (N=0)",
+        "Horizon (N)": 0,
+        "Weighting w(p)": "N/A",
         "Coverage (↑)": f"{tsplit_base['coverage']:.4f} (Base)",
         "Backward (↓)": f"{tsplit_base['backward']:.4f} (Base)",
         "Repeat (↓)": f"{tsplit_base['repeat']:.4f} (Base)",
@@ -205,11 +205,11 @@ def run_full_ablation_suite(
     }
 
     # ==========================================================================
-    # EVALUACIÓN DE CADA MODELO POR LOOCV
+    # LOOCV MODEL EVALUATION
     # ==========================================================================
     for model_name in models:
         m_display = model_display_names.get(model_name, model_name.upper())
-        print(f"\n>>> Evaluando estudios de ablación para {m_display}...")
+        print(f"\n>>> Evaluating ablation studies for {m_display}...")
 
         model = create_model(
             model_name=model_name,
@@ -220,13 +220,13 @@ def run_full_ablation_suite(
             device=device,
         )
 
-        # Diccionarios de métricas por condición para este modelo
-        # Estudio 1:
+        # Metric dictionaries by condition for this model
+        # Study 1:
         metrics_oa_true = {"cov": [], "back": [], "rep": [], "frac": [], "nov": [], "map": [], "ndcg": [], "mrr": []}
         metrics_oa_false = {"cov": [], "back": [], "rep": [], "frac": [], "nov": [], "map": [], "ndcg": [], "mrr": []}
         metrics_oa_failonly = {"cov": [], "back": [], "rep": [], "frac": [], "nov": [], "map": [], "ndcg": [], "mrr": []}
 
-        # Estudio 2:
+        # Study 2:
         study2_collectors = {
             "prop_n3": {"cov": [], "back": [], "rep": [], "frac": [], "nov": []},
             "uniform_n3": {"cov": [], "back": [], "rep": [], "frac": [], "nov": []},
@@ -235,21 +235,21 @@ def run_full_ablation_suite(
             "uniform_n1": {"cov": [], "back": [], "rep": [], "frac": [], "nov": []},
         }
 
-        # Iterar sobre los 48 folds de LOOCV
+        # Iterate over 48 folds of LOOCV
         for i in range(n_students):
             test_uid = student_ids[i]
             train_uids = [student_ids[j] for j in range(n_students) if j != i]
 
             ckpt_path = get_checkpoint_for_fold(checkpoints_dir, model_name, i)
             if not ckpt_path:
-                print(f"Error: No se encontró checkpoint para {model_name} fold {i}", file=sys.stderr)
+                print(f"Error: Checkpoint not found for {model_name} fold {i}", file=sys.stderr)
                 continue
 
             model.load(ckpt_path)
             model.eval()
 
             with torch.no_grad():
-                # 1. Precomputar embeddings de los alumnos de entrenamiento una sola vez
+                # 1. Precompute embeddings for training peers once
                 train_embs = {}
                 for uid in train_uids:
                     raw_p = paths[uid][:max_seq_len]
@@ -264,7 +264,7 @@ def run_full_ablation_suite(
                     data_t[0, : len(raw_p)] = item_embs
                     train_embs[uid] = model(data_t, mask=mask).squeeze(0).cpu().detach()
 
-                # 2. Embedding del alumno de test sobre su prefijo histórico
+                # 2. Embedding for test student over prefix trajectory
                 full_path = paths[test_uid]
                 n_int = len(full_path) // 2
                 prefix = full_path[:n_int]
@@ -279,13 +279,13 @@ def run_full_ablation_suite(
                 data_test[0, : len(pref_crop)] = item_embs_t
                 target_emb = model(data_test, mask=mask_t).squeeze(0).cpu().detach()
 
-                # Conjuntos de candidatos por condición de outcome
+                # Candidate sets by outcome condition
                 pass_candidates = {u: emb for u, emb in train_embs.items() if grades[u] == 1}
                 all_candidates = train_embs
                 fail_candidates = {u: emb for u, emb in train_embs.items() if grades[u] == 0}
 
                 # --------------------------------------------------------------
-                # ESTUDIO 1: EVALUACIÓN OUTCOME-AWARE
+                # STUDY 1: OUTCOME-AWARE EVALUATION
                 # --------------------------------------------------------------
                 recs_oa_true = calc_recommendations(pass_candidates, target_emb, paths, prefix, top=top_k, weight_type="inv_pos")
                 recs_oa_false = calc_recommendations(all_candidates, target_emb, paths, prefix, top=top_k, weight_type="inv_pos")
@@ -316,7 +316,7 @@ def run_full_ablation_suite(
                         coll["nov"].append(m["novelty"])
 
                 # --------------------------------------------------------------
-                # ESTUDIO 2: EVALUACIÓN TIME-DECAY & HORIZONTE (para suspensos)
+                # STUDY 2: TIME-DECAY & HORIZON EVALUATION (for failing students)
                 # --------------------------------------------------------------
                 if not is_pass:
                     # N=3
@@ -348,12 +348,12 @@ def run_full_ablation_suite(
                         study2_collectors[c_key]["nov"].append(m["novelty"])
 
         # ======================================================================
-        # AGREGAR RESULTADOS ESTUDIO 1 PARA ESTE MODELO
+        # AGGREGATE STUDY 1 RESULTS FOR THIS MODEL
         # ======================================================================
         for label_variant, is_oa, coll in [
-            (f"{m_display} (Con Outcome-Aware: Pares Aprobados)", "Sí", metrics_oa_true),
-            (f"{m_display} (Sin Outcome-Aware: Todos los Pares)", "No", metrics_oa_false),
-            (f"{m_display} (Control Negativo: Pares Suspensos)", "Inverso", metrics_oa_failonly),
+            (f"{m_display} (With Outcome-Aware: Passing Peers)", "Yes", metrics_oa_true),
+            (f"{m_display} (Without Outcome-Aware: All Peers)", "No", metrics_oa_false),
+            (f"{m_display} (Negative Control: Failing Peers)", "Inverse", metrics_oa_failonly),
         ]:
             c_val = float(np.mean(coll["cov"]))
             b_val = float(np.mean(coll["back"]))
@@ -372,7 +372,7 @@ def run_full_ablation_suite(
             mrr_str = f"{np.mean(coll['mrr']):.4f}" if coll["mrr"] else "N/A"
 
             rows_study1.append({
-                "Estrategia / Modelo": label_variant,
+                "Strategy / Model": label_variant,
                 "Outcome-Aware?": is_oa,
                 "Coverage (↑)": f"{c_val:.4f} ({pct_cov:+.2f}%)",
                 "Backward (↓)": f"{b_val:.4f} ({pct_back:+.2f}%)",
@@ -390,14 +390,14 @@ def run_full_ablation_suite(
             })
 
         # ======================================================================
-        # AGREGAR RESULTADOS ESTUDIO 2 PARA ESTE MODELO
+        # AGGREGATE STUDY 2 RESULTS FOR THIS MODEL
         # ======================================================================
         configs_s2_meta = [
             ("prop_n3", f"{m_display} Proposed (N=3, w(p)=1/(pos+1))", 3, "w(p) = 1/(pos + 1)"),
-            ("uniform_n3", f"{m_display} Uniform (N=3, w=1.0)", 3, "w(p) = 1.0 (Sin decay)"),
-            ("immediate_n3", f"{m_display} Immediate Truncation (N=3, w_0)", 3, "w(p) = 1 si pos=0 else 0"),
+            ("uniform_n3", f"{m_display} Uniform (N=3, w=1.0)", 3, "w(p) = 1.0 (No decay)"),
+            ("immediate_n3", f"{m_display} Immediate Truncation (N=3, w_0)", 3, "w(p) = 1 if pos=0 else 0"),
             ("prop_n1", f"{m_display} Single-Step (N=1, w(p)=1/(pos+1))", 1, "w(p) = 1/(pos + 1)"),
-            ("uniform_n1", f"{m_display} Single-Step Uniform (N=1, w=1.0)", 1, "w(p) = 1.0 (Sin decay)"),
+            ("uniform_n1", f"{m_display} Single-Step Uniform (N=1, w=1.0)", 1, "w(p) = 1.0 (No decay)"),
         ]
 
         for c_key, c_label, n_h, w_desc in configs_s2_meta:
@@ -412,10 +412,10 @@ def run_full_ablation_suite(
             pct_back = ((b_val - tsplit_base["backward"]) / tsplit_base["backward"]) * 100
 
             rows_study2.append({
-                "Modelo": m_display,
-                "Configuración": c_label,
-                "Horizonte (N)": n_h,
-                "Ponderación w(p)": w_desc,
+                "Model": m_display,
+                "Configuration": c_label,
+                "Horizon (N)": n_h,
+                "Weighting w(p)": w_desc,
                 "Coverage (↑)": f"{c_val:.4f} ({pct_cov:+.2f}%)",
                 "Backward (↓)": f"{b_val:.4f} ({pct_back:+.2f}%)",
                 "Repeat (↓)": f"{r_val:.4f}",
@@ -426,7 +426,7 @@ def run_full_ablation_suite(
             })
 
     # ==========================================================================
-    # MOSTRAR Y EXPORTAR TABLAS
+    # DISPLAY AND EXPORT TABLES
     # ==========================================================================
     df1 = pd.DataFrame(rows_study1)
     df2 = pd.DataFrame(rows_study2)
@@ -438,33 +438,33 @@ def run_full_ablation_suite(
     df2.to_csv(csv2_path, index=False)
 
     print("\n" + "=" * 115)
-    print("ESTUDIO 1: ABLACIÓN DE INTERVENCIÓN OUTCOME-AWARE (PARES APROBADOS VS. TODOS LOS PARES)")
+    print("STUDY 1: OUTCOME-AWARE PEER INTERVENTION ABLATION (PASSING PEERS VS. ALL PEERS)")
     print("=" * 115)
     cols_display1 = [
-        "Estrategia / Modelo", "Outcome-Aware?", "Coverage (↑)", "Backward (↓)",
+        "Strategy / Model", "Outcome-Aware?", "Coverage (↑)", "Backward (↓)",
         "Repeat (↓)", "Frac Allowed (↑)", "Novelty (↑)", "MAP (Pass)", "NDCG (Pass)"
     ]
     print(format_table(cols_display1, df1[cols_display1].values.tolist()))
 
     print("\n" + "=" * 115)
-    print("ESTUDIO 2: ABLACIÓN DE PONDERACIÓN TEMPORAL (TIME-DECAY) Y HORIZONTE DE SIMULACIÓN")
+    print("STUDY 2: TEMPORAL WEIGHTING (TIME-DECAY) AND SIMULATION HORIZON ABLATION")
     print("=" * 115)
     cols_display2 = [
-        "Configuración", "Horizonte (N)", "Ponderación w(p)", "Coverage (↑)", "Backward (↓)", "Repeat (↓)", "Novelty (↑)"
+        "Configuration", "Horizon (N)", "Weighting w(p)", "Coverage (↑)", "Backward (↓)", "Repeat (↓)", "Novelty (↑)"
     ]
     print(format_table(cols_display2, df2[cols_display2].values.tolist()))
 
-    print(f"\n[OK] Resultados exportados en '{output_dir}/':")
+    print(f"\n[OK] Results exported to '{output_dir}/':")
     print(f"  -> {csv1_path}")
     print(f"  -> {csv2_path}")
 
-    # Exportar tablas LaTeX en tables/ si tables_dir existe
+    # Export LaTeX tables in tables/ if tables_dir exists
     if tables_dir:
         tables_dir.mkdir(parents=True, exist_ok=True)
         tex1_path = tables_dir / "ablation_outcome_aware.tex"
         tex2_path = tables_dir / "ablation_time_decay.tex"
 
-        # Generar versión LaTeX limpia para Estudio 1
+        # Generate clean LaTeX table for Study 1
         tex1_lines = [
             r"\begin{table}[ht!]",
             r"\centering",
@@ -476,7 +476,7 @@ def run_full_ablation_suite(
             r"\hline",
         ]
         for _, r in df1.iterrows():
-            strat = r["Estrategia / Modelo"].replace("&", r"\&")
+            strat = r["Strategy / Model"].replace("&", r"\&")
             oa = r["Outcome-Aware?"]
             cr = r["Coverage (↑)"].split()[0]
             br = r["Backward (↓)"].split()[0]
@@ -487,7 +487,7 @@ def run_full_ablation_suite(
         tex1_lines.extend([r"\hline", r"\end{tabular}", r"\end{table}"])
         tex1_path.write_text("\n".join(tex1_lines) + "\n", encoding="utf-8")
 
-        # Generar versión LaTeX limpia para Estudio 2
+        # Generate clean LaTeX table for Study 2
         tex2_lines = [
             r"\begin{table}[ht!]",
             r"\centering",
@@ -499,61 +499,61 @@ def run_full_ablation_suite(
             r"\hline",
         ]
         for _, r in df2.iterrows():
-            cfg_name = r["Configuración"].replace("&", r"\&")
-            h = r["Horizonte (N)"]
-            w = r["Ponderación w(p)"].replace("&", r"\&")
+            cfg_name = r["Configuration"].replace("&", r"\&")
+            h = r["Horizon (N)"]
+            w = r["Weighting w(p)"].replace("&", r"\&")
             cr = r["Coverage (↑)"].split()[0]
             br = r["Backward (↓)"].split()[0]
             tex2_lines.append(f"{cfg_name} & {h} & {w} & {cr} & {br} \\\\")
         tex2_lines.extend([r"\hline", r"\end{tabular}", r"\end{table}"])
         tex2_path.write_text("\n".join(tex2_lines) + "\n", encoding="utf-8")
 
-        print(f"[OK] Tablas LaTeX exportadas en '{tables_dir}/':")
+        print(f"[OK] LaTeX tables exported to '{tables_dir}/':")
         print(f"  -> {tex1_path}")
         print(f"  -> {tex2_path}")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Ejecutar suite de ablación algorítmica para SeqEmb utilizando checkpoints entrenados."
+        description="Run algorithmic ablation study suite for SeqEmb using pretrained checkpoints."
     )
     parser.add_argument(
         "-m", "--model",
         type=str,
         default="all",
         choices=["all", "caser", "sasrec", "grurec"],
-        help="Modelo o modelos a evaluar (default: all -> caser, sasrec, grurec)"
+        help="Model or models to evaluate (default: all -> caser, sasrec, grurec)"
     )
     parser.add_argument(
         "-c", "--checkpoints-dir",
         type=str,
         default="checkpoints",
-        help="Directorio de checkpoints (default: checkpoints)"
+        help="Checkpoints directory (default: checkpoints)"
     )
     parser.add_argument(
         "-o", "--output-dir",
         type=str,
         default="results/ablation",
-        help="Directorio de exportación de resultados CSV (default: results/ablation)"
+        help="CSV results output directory (default: results/ablation)"
     )
     parser.add_argument(
         "-t", "--tables-dir",
         type=str,
         default="tables",
-        help="Directorio de exportación de tablas LaTeX (default: tables)"
+        help="LaTeX tables output directory (default: tables)"
     )
     parser.add_argument(
         "--device",
         type=str,
         default="auto",
         choices=["auto", "cuda", "cpu"],
-        help="Dispositivo de cómputo (default: auto)"
+        help="Compute device (default: auto)"
     )
     parser.add_argument(
         "--steps",
         type=int,
         default=3,
-        help="Pasos del horizonte de recomendación curricular N (default: 3)"
+        help="Curricular recommendation horizon steps N (default: 3)"
     )
 
     args = parser.parse_args()

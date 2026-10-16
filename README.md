@@ -1,106 +1,201 @@
 # Sequential Recommendation with Learning Paths and Pedagogical Ontology Graphs (seq_emb)
 
-Este proyecto implementa y compara modelos de recomendación secuencial de recursos pedagógicos para trayectorias de aprendizaje de estudiantes.
+This project implements and evaluates sequential recommendation models for pedagogical resources along student learning paths.
 
-## Modelos Soportados
+## Supported Models
 
-Cada arquitectura cuenta con dos modalidades de entrada:
-1. **Con POG (*Pedagogical Ontology Graph*)**: Inicializa las representaciones de los ítems usando embeddings continuos pre-entrenados con **RotatE** sobre el grafo curricular de prerrequisitos y remediales.
-2. **Sin POG (*noembed*)**: Aprende las representaciones de los ítems de forma integral (*end-to-end*) mediante una capa `nn.Embedding`.
+Each architecture supports two input modalities:
+1. **With POG (*Pedagogical Ontology Graph*)**: Initializes item representations using continuous embeddings pre-trained with **RotatE** over the curricular prerequisite and remedial graph.
+2. **Without POG (*noembed*)**: Learns item representations end-to-end using an `nn.Embedding` layer.
 
-Arquitecturas secuenciales:
-- **CASER**: Modelo convolucional sobre secuencias (filtros horizontales y verticales).
-- **GRU4Rec**: Red recurrente con unidades GRU y proyecciones lineales.
-- **SASRec**: Transformer autorregresivo con Self-Attention multi-cabezal y positional embeddings.
+Sequential architectures:
+- **CASER**: Convolutional sequence model (capturing horizontal and vertical patterns).
+- **GRU4Rec**: Recurrent neural network with GRU units and linear projections.
+- **SASRec**: Autoregressive Transformer with multi-head self-attention and positional embeddings.
 
-## Estructura del Proyecto
+## Project Structure
 
 ```text
 seq_emb/
 ├── configs/
-│   └── default.yaml             # Configuración declarativa de hiperparámetros
+│   └── default.yaml             # Declarative hyperparameter configuration
 ├── data/
-│   ├── raw/                     # JSONs de rutas, calificaciones, prerrequisitos, remediales
-│   └── states/                  # know.pth (RotatE pre-entrenado)
+│   ├── raw/                     # Learning paths, grades, prerequisites, remedials JSONs
+│   └── states/                  # know.pth (Pre-trained RotatE)
 ├── src/seq_emb/
-│   ├── core/                    # Semillas reproducibles y gestión de dispositivos
-│   ├── data/                    # Loader tipado y generador de tensores
+│   ├── core/                    # Reproducible seeds and device management
+│   ├── data/                    # Typed loader and tensor generator
 │   ├── models/                  # BaseSequentialModel, CaserModel, GRURecModel, SASRecModel
 │   ├── recommender/             # Latent k-NN cosine recommendation
-│   ├── evaluation/              # Ranking metrics (MAP, NDCG, HR, MRR) y Path metrics (DAG)
-│   └── experiments/             # KFoldRunner estratificado y determinista
+│   ├── evaluation/              # Ranking metrics (MAP, NDCG, HR, MRR) and Path metrics (DAG)
+│   ├── experiments/             # Stratified, deterministic cross-validation runner
+│   └── tuning/                  # Taguchi orthogonal designs, runner, and ANOVA analysis
 ├── scripts/
-│   ├── run_model.py             # CLI para entrenar y evaluar cualquier modelo individual
-│   └── run_benchmark.py         # Ejecuta la comparativa completa (6 variantes)
-└── pyproject.toml               # Configuración del paquete y dependencias
+│   ├── run_experiments.py       # End-to-end pipeline: Tuning -> Benchmark -> Ablation -> Tables
+│   ├── run_model.py             # CLI to train and evaluate any individual model
+│   ├── run_benchmark.py         # Runs the full benchmark comparison (6 variants)
+│   ├── run_taguchi.py           # Taguchi hyperparameter tuning and Pareto front analysis
+│   ├── run_ablation_study.py    # Outcome-aware and time-decay ablation suite
+│   └── print_tables.py          # Formats and exports LaTeX tables (Tuning, Pass, Fail)
+└── pyproject.toml               # Package configuration and dependencies
 ```
 
-## Uso Rápido
+## End-to-End Experiment Pipeline (`run_experiments.py`)
 
-### 1. Ejecutar un Modelo Individual
+The master runner [`scripts/run_experiments.py`](scripts/run_experiments.py) orchestrates the complete experimental workflow in sequence:
+1. **Taguchi Hyperparameter Tuning**: Explores orthogonal array parameter spaces and detects Pareto-optimal configurations.
+2. **Model Training & Evaluation**: Trains models under LOOCV/K-Fold, saving full checkpoints (`checkpoints/`) and user-level metrics (`results/`).
+3. **Ablation Studies**: Evaluates outcome-aware filtering and temporal time-decay/horizon interventions on saved checkpoints.
+4. **LaTeX Tables Generation**: Compiles publication-ready tables into `tables/` (`tuning.tex`, `pass.tex`, `fail.tex`).
+
+### Basic Usage
 ```bash
-# CASER con POG (5 folds)
+# Run the entire pipeline across all models (LOOCV, 500 epochs)
+python scripts/run_experiments.py
+
+# Run pipeline for a specific architecture (e.g. caser, grurec, or sasrec):
+python scripts/run_experiments.py --models caser
+
+# Fast run with custom epochs and parallel Taguchi workers:
+python scripts/run_experiments.py --epochs 100 --taguchi-epochs 100 --jobs 4
+```
+
+### Stage Skipping & Modular Execution
+```bash
+# Skip Taguchi tuning and run training + ablation + tables:
+python scripts/run_experiments.py --skip-taguchi
+
+# Skip tuning and training, running only ablation and tables on existing checkpoints:
+python scripts/run_experiments.py --skip-taguchi --skip-training
+
+# Benchmark only models with POG (skipping non-POG baselines):
+python scripts/run_experiments.py --pog-only
+```
+
+## Quick Start (Individual Scripts)
+
+### 1. Run an Individual Model
+```bash
+# CASER with POG (LOOCV / K-Fold)
 python scripts/run_model.py --model caser --pog
 
-# CASER sin POG
+# CASER without POG
 python scripts/run_model.py --model caser --no-pog
 
-# SASRec con POG
+# SASRec with POG
 python scripts/run_model.py --model sasrec --pog
 
-# GRU4Rec con POG
+# GRU4Rec with POG
 python scripts/run_model.py --model grurec --pog
 ```
 
-### 2. Ejecutar el Benchmark Completo (6 Variantes)
+### 2. Run the Full Benchmark (6 Variants)
 ```bash
 python scripts/run_benchmark.py --epochs 500 --seed 42
 ```
-Los resultados se imprimirán en una tabla estructurada y se almacenarán en `results/folds_full_path.json`.
+Results will be printed in a structured table and saved to `results/folds_full_path.json`.
 
-### 3. Modo Ventana Local (Intervención Pedagógica)
-Para evaluar las métricas de grafo únicamente sobre los pasos de la recomendación ($N=3$) en lugar de toda la trayectoria:
+### 3. Local Window Mode (Pedagogical Intervention)
+To evaluate graph metrics exclusively over the recommendation steps ($N=3$) rather than the full trajectory:
 ```bash
 python scripts/run_benchmark.py --local-window
 ```
 
-## Hyperparameter Tuning con Taguchi (L16 y L32b)
+## Hyperparameter Tuning with Taguchi (L16 and L32b)
 
-El módulo [`tuning`](src/seq_emb/tuning) permite explorar sistemáticamente el espacio de hiperparámetros mediante matrices ortogonales balanceadas de Taguchi, evaluando cada combinación mediante 5-Fold Cross Validation determinista.
+The [`tuning`](src/seq_emb/tuning) module allows systematic exploration of the hyperparameter space using balanced Taguchi orthogonal arrays, evaluating each parameter combination through deterministic cross-validation.
 
-### 1. Ejecutar el Tuning (Individual o Todos a la Vez)
+### 1. Run Tuning (Individual or All Models)
 ```bash
-# Lanzar el tuning de TODOS los modelos (CASER + GRU4Rec + SASRec)
+# Launch tuning for ALL models (CASER + GRU4Rec + SASRec)
 python scripts/run_taguchi.py --model all --pog
 
-# O para un modelo específico:
+# Or for a specific model:
 python scripts/run_taguchi.py --model caser --pog
 python scripts/run_taguchi.py --model grurec --pog
 python scripts/run_taguchi.py --model sasrec --pog
 
-# Si deseas evaluar TODAS las variantes (con POG y sin POG):
+# To evaluate ALL variants (with POG and without POG):
 python scripts/run_taguchi.py --model all --all-variants
 
-# Ejecutar las corridas de Taguchi en paralelo (ej. 4 workers):
+# Run Taguchi iterations in parallel (e.g. 4 workers):
 python scripts/run_taguchi.py --model caser --pog --jobs 4
 ```
 
-### 2. Análisis Estadístico Taguchi y Frente de Pareto
-Puedes ejecutar directamente el análisis estadístico sobre resultados ya existentes (individual o de todos):
+### 2. Taguchi Statistical Analysis and Pareto Front
+You can directly run the statistical analysis on existing results (individual model or all):
 ```bash
-# Analizar todos los modelos a la vez desde un directorio con CSVs:
+# Analyze all models from a directory containing CSVs:
 python scripts/run_taguchi.py --model all --analyze-only results/tuning
 
-# O analizar un modelo específico:
+# Or analyze a specific model:
 python scripts/run_taguchi.py --model caser --analyze-only results/tuning/caser_pog_fine_results.csv
 ```
-El análisis calcula:
-- Normalización Z-score multiobjetivo (invirtiendo métricas donde menor es mejor: `backward_ratio` y `repeat_ratio`).
-- Descomposición de varianza ANOVA por factor (% de varianza explicada).
-- Identificación de los niveles óptimos por factor.
-- Detección estricta de las soluciones no dominadas en el **Frente de Pareto**.
-- Exportación automática a:
+The analysis computes:
+- Multi-objective Z-score normalization (inverting metrics where lower is better: `backward_ratio` and `repeat_ratio`).
+- ANOVA variance decomposition per factor (% of explained variance).
+- Identification of optimal levels per factor.
+- Strict detection of non-dominated solutions on the **Pareto Front**.
+- Automatic export to:
   - `results/tuning/{model}_analysis_results_with_zscores.csv`
   - `results/tuning/{model}_taguchi_best_levels.csv`
   - `results/tuning/{model}_pareto_front_runs.csv`
+
+## Ablation Studies
+
+The ablation suite ([`scripts/run_ablation_study.py`](scripts/run_ablation_study.py)) systematically evaluates the core components of the proposed recommendation mechanism using trained checkpoints across all models under LOOCV ($K=10$, $N=3$):
+
+### 1. Study 1: Outcome-Aware Peer Intervention Ablation
+Isolates the effect of conditioning recommendation prototypes on student academic success:
+- **Naive Baseline (Factual)**: Real unassisted trajectories of failing students without pedagogical intervention ($N=3$ factual steps).
+- **With Outcome-Aware (Passing Peers)**: Prototypes restricted strictly to successful students (`grade=1`).
+- **Without Outcome-Aware (All Peers)**: Unconstrained peer retrieval using both passing and failing students.
+- **Negative Control (Failing Peers)**: Counterfactual intervention retrieving only failing students (`grade=0`).
+
+Evaluates ranking fidelity for passing students ($\text{MAP}$, $\text{NDCG}$, $\text{MRR}$) and curricular adherence for failing students ($\text{CR}$, $\text{BR}$, $\text{RR}$, $\text{AE}$, $\text{Novelty}$).
+
+### 2. Study 2: Temporal Projection (Time-Decay) and Simulation Horizon
+Examines how upcoming items in prototype trajectories should be aggregated and the depth of the recommendation intervention:
+- **Factual Base at $t_{\text{split}}$**: Historical trajectory state before intervention ($N=0$).
+- **Proposed Positional Decay**: $w(p) = \frac{1}{\text{pos} + 1}$ with horizon $N=3$.
+- **Uniform Weighting (No Decay)**: $w(p) = 1.0$ with horizon $N=3$.
+- **Immediate Truncation**: Next-step priority only ($w_0$) with horizon $N=3$.
+- **Single-Step Horizon ($N=1$)**: Evaluating immediate transition with decay vs. uniform weighting.
+
+### Running the Ablation Suite
+```bash
+# Run full ablation suite on all models (CASER, GRU4Rec, SASRec)
+python scripts/run_ablation_study.py --model all --checkpoints-dir checkpoints
+
+# Run ablation for an individual model:
+python scripts/run_ablation_study.py --model caser
+python scripts/run_ablation_study.py --model grurec
+python scripts/run_ablation_study.py --model sasrec
+
+# Specify custom steps horizon and export directories:
+python scripts/run_ablation_study.py --steps 3 --output-dir results/ablation --tables-dir tables
+```
+
+Outputs are automatically exported to:
+- `results/ablation/ablation_1_outcome_aware_filtering.csv`
+- `results/ablation/ablation_2_time_decay_and_horizon.csv`
+- `tables/ablation_outcome_aware.tex`
+- `tables/ablation_time_decay.tex`
+
+## LaTeX Table Generation
+
+To generate and export publication-ready LaTeX tables matching the paper specifications:
+```bash
+# Generate all tables (Tuning, Pass, Fail)
+python scripts/print_tables.py --table all
+
+# Generate specific tables:
+python scripts/print_tables.py --table tuning
+python scripts/print_tables.py --table pass
+python scripts/print_tables.py --table fail
+
+# Generate PASS table in wide format:
+python scripts/print_tables.py --table pass --pass-format wide
+```
+Output `.tex` files are saved to `tables/` (`tuning.tex`, `pass.tex`, `fail.tex`).
 

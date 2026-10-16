@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Script para generar e imprimir en formato LaTeX las tablas de métricas de:
-1. TUNING: Diseños ortogonales de Taguchi, niveles explorados, % de varianza ANOVA y configuración óptima.
-2. PASS: Comparación de rendimiento de recomendación (MAP, NDCG, MRR) para estudiantes aprobados antes y después de POG.
-3. FAIL: Métricas de intervención de trayectoria (CR, BR, RR, AE, N) para estudiantes suspensos comparando Naive Baseline vs. modelos.
+"""Script to generate and print LaTeX tables for:
+1. TUNING: Taguchi orthogonal designs, explored levels, ANOVA % variance explained, and optimal configuration.
+2. PASS: Recommendation performance comparison (MAP, NDCG, MRR) for passing students before and after POG.
+3. FAIL: Trajectory intervention metrics (CR, BR, RR, AE, N) for failing students comparing Naive Baseline vs. models.
 """
 
 import argparse
@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 
 
-# Metadatos para los hiperparámetros explorados en el Tuning de Taguchi
+# Metadata for hyperparameters explored in Taguchi Tuning
 TAGUCHI_FACTOR_META = {
     "caser": [
         ("lr", "Learning Rate", r"\{10^{-6}, 10^{-5}, 10^{-4}, 10^{-3}\}"),
@@ -57,7 +57,7 @@ DEFAULT_BASE_VALUES = {
 
 
 def format_optimal_level(val: Any, factor: str) -> str:
-    """Formatea el nivel óptimo seleccionado para la tabla LaTeX."""
+    """Formats the selected optimal level for the LaTeX table."""
     if factor == "lr":
         v = float(val)
         if abs(v - 1e-6) < 1e-8:
@@ -83,7 +83,7 @@ def format_optimal_level(val: Any, factor: str) -> str:
 
 
 # ==============================================================================
-# 1. TABLA TUNING (TAGUCHI & ANOVA)
+# 1. TUNING TABLE (TAGUCHI & ANOVA)
 # ==============================================================================
 def generate_tuning_table(tuning_dir: Path) -> str:
     lines = [
@@ -102,14 +102,14 @@ def generate_tuning_table(tuning_dir: Path) -> str:
         factors = TAGUCHI_FACTOR_META[m_key]
         n_factors = len(factors)
 
-        # Buscar archivo CSV de mejores niveles
+        # Search for best levels CSV file
         candidates = [
             tuning_dir / f"{m_key}_pog_taguchi_best_levels.csv",
             tuning_dir / f"{m_key}_taguchi_best_levels.csv",
         ]
         csv_file = next((c for c in candidates if c.exists()), None)
         if not csv_file:
-            print(f"Aviso: No se encontró CSV de Taguchi para {m_key} en {tuning_dir}", file=sys.stderr)
+            print(f"Warning: No Taguchi CSV found for {m_key} in {tuning_dir}", file=sys.stderr)
             continue
 
         df = pd.read_csv(csv_file)
@@ -131,10 +131,10 @@ def generate_tuning_table(tuning_dir: Path) -> str:
 
 
 # ==============================================================================
-# CARGA DE DATOS DE USUARIOS (PASS Y FAIL)
+# USER DATA LOADING (PASS AND FAIL)
 # ==============================================================================
 def load_user_metrics(results_dir: Path, input_file: Optional[Path] = None) -> pd.DataFrame:
-    """Carga las métricas por usuario desde CSVs individuales o archivo consolidado."""
+    """Loads user-level metrics from individual CSVs or consolidated file."""
     if input_file and input_file.exists():
         if input_file.suffix == ".json":
             with open(input_file, "r", encoding="utf-8") as f:
@@ -149,12 +149,12 @@ def load_user_metrics(results_dir: Path, input_file: Optional[Path] = None) -> p
         else:
             return pd.read_csv(input_file)
 
-    # Buscar folds_full_path_user_level.csv
+    # Search for folds_full_path_user_level.csv
     consolidated = results_dir / "folds_full_path_user_level.csv"
     if consolidated.exists():
         return pd.read_csv(consolidated)
 
-    # Cargar CSVs individuales por modelo y variante
+    # Load individual CSVs by model and variant
     records = []
     for m in ["caser", "sasrec", "grurec"]:
         for use_pog in [True, False]:
@@ -173,14 +173,15 @@ def load_user_metrics(results_dir: Path, input_file: Optional[Path] = None) -> p
     if records:
         return pd.concat(records, ignore_index=True)
 
-    raise FileNotFoundError(f"No se encontraron CSVs de métricas de usuario en {results_dir}")
+    raise FileNotFoundError(f"No user metrics CSVs found in {results_dir}")
 
 
 def load_base_values(ablation_file: Optional[Path] = None) -> Dict[str, float]:
-    """Carga los valores base de trayectoria no asistida (Naive Baseline)."""
+    """Loads baseline unassisted trajectory values (Naive Baseline)."""
     if ablation_file and ablation_file.exists():
         df = pd.read_csv(ablation_file)
-        naive_row = df[df["Estrategia / Modelo"].str.contains("Naive Baseline", case=False, na=False)]
+        model_col = "Strategy / Model" if "Strategy / Model" in df.columns else ("Estrategia / Modelo" if "Estrategia / Modelo" in df.columns else df.columns[0])
+        naive_row = df[df[model_col].str.contains("Naive Baseline", case=False, na=False)]
         if not naive_row.empty:
             r = naive_row.iloc[0]
             def extract_num(val):
@@ -197,11 +198,16 @@ def load_base_values(ablation_file: Optional[Path] = None) -> Dict[str, float]:
 
 
 def load_ablation_delta_base(ablation_file: Optional[Path] = None) -> Dict[str, Dict[str, str]]:
-    """Carga los porcentajes delta base precalculados desde el CSV de ablación si existe."""
+    """Loads precomputed base delta percentages from ablation CSV if available."""
     res = {}
     if ablation_file and ablation_file.exists():
         df = pd.read_csv(ablation_file)
-        model_names = [("caser", "Caser (con POG)"), ("sasrec", "SASRec (con POG)"), ("grurec", "GRU4Rec (con POG)")]
+        model_col = "Strategy / Model" if "Strategy / Model" in df.columns else ("Estrategia / Modelo" if "Estrategia / Modelo" in df.columns else df.columns[0])
+        model_names = [
+            ("caser", ["Caser (with POG)", "Caser (con POG)"]),
+            ("sasrec", ["SASRec (with POG)", "SASRec (con POG)"]),
+            ("grurec", ["GRU4Rec (with POG)", "GRU4Rec (con POG)"]),
+        ]
         col_map = {
             "coverage_ratio": "Δ % Coverage",
             "backward_ratio": "Δ % Backward",
@@ -209,8 +215,8 @@ def load_ablation_delta_base(ablation_file: Optional[Path] = None) -> Dict[str, 
             "frac_allowed_edges": "Δ % Frac Allowed",
             "novelty": "Δ % Novelty",
         }
-        for m_key, m_label in model_names:
-            sub = df[df["Estrategia / Modelo"] == m_label]
+        for m_key, m_labels in model_names:
+            sub = df[df[model_col].isin(m_labels)]
             if not sub.empty:
                 r = sub.iloc[0]
                 res[m_key] = {met: str(r[col]) for met, col in col_map.items() if col in r}
@@ -218,7 +224,7 @@ def load_ablation_delta_base(ablation_file: Optional[Path] = None) -> Dict[str, 
 
 
 def load_unfiltered_pass_metrics(ablation_file: Optional[Path] = None) -> Dict[str, Dict[str, float]]:
-    """Carga las métricas de estudiantes aprobados sin outcome-aware (unfiltered) desde el CSV de ablación."""
+    """Loads passing student metrics without outcome-aware filtering (unfiltered) from ablation CSV."""
     defaults = {
         "caser": {"map": 0.2731, "ndcg": 0.4179, "mrr": 0.5423},
         "sasrec": {"map": 0.2743, "ndcg": 0.4382, "mrr": 0.6806},
@@ -227,11 +233,15 @@ def load_unfiltered_pass_metrics(ablation_file: Optional[Path] = None) -> Dict[s
     if ablation_file and ablation_file.exists():
         try:
             df = pd.read_csv(ablation_file)
+            model_col = "Strategy / Model" if "Strategy / Model" in df.columns else ("Estrategia / Modelo" if "Estrategia / Modelo" in df.columns else df.columns[0])
             model_map = [("caser", "Caser"), ("sasrec", "SASRec"), ("grurec", "GRU4Rec")]
             for m_key, m_name in model_map:
                 sub = df[
-                    df["Estrategia / Modelo"].str.contains(m_name, case=False, na=False)
-                    & df["Estrategia / Modelo"].str.contains("Sin Outcome-Aware", case=False, na=False)
+                    df[model_col].str.contains(m_name, case=False, na=False)
+                    & (
+                        df[model_col].str.contains("Without Outcome-Aware", case=False, na=False)
+                        | df[model_col].str.contains("Sin Outcome-Aware", case=False, na=False)
+                    )
                 ]
                 if not sub.empty:
                     r = sub.iloc[0]
@@ -241,12 +251,12 @@ def load_unfiltered_pass_metrics(ablation_file: Optional[Path] = None) -> Dict[s
                         "mrr": float(r["MRR (Pass)"]),
                     }
         except Exception as e:
-            print(f"Warning: No se pudieron leer métricas unfiltered de {ablation_file}: {e}", file=sys.stderr)
+            print(f"Warning: Could not read unfiltered metrics from {ablation_file}: {e}", file=sys.stderr)
     return defaults
 
 
 # ==============================================================================
-# 2. TABLA PASS (ESTUDIANTES QUE APRUEBAN)
+# 2. PASS TABLE (PASSING STUDENTS)
 # ==============================================================================
 def generate_pass_table(
     df_users: pd.DataFrame,
@@ -259,7 +269,7 @@ def generate_pass_table(
     models = [("caser", "Caser"), ("sasrec", "SASRec"), ("grurec", "GRU4Rec")]
     metrics = ["map", "ndcg", "mrr"]
 
-    # Extraer métricas Before y After de df_users
+    # Extract Before and After metrics from df_users
     data: Dict[str, Dict[str, float]] = {}
     for m_key, m_label in models:
         data[m_key] = {}
@@ -306,7 +316,7 @@ def generate_pass_table(
         lines.append(r"\end{table}")
         return "\n".join(lines)
 
-    # Formato stacked (por defecto, idéntico a main.tex)
+    # Stacked format (default, matches manuscript)
     lines = [
         r"\begin{table}[th!]",
         r"\centering",
@@ -338,7 +348,7 @@ def generate_pass_table(
         b_map = data[m_key]["before_map"]
         b_ndcg = data[m_key]["before_ndcg"]
         b_mrr = data[m_key]["before_mrr"]
-        b_mrr_str = f"\\textbf{{{b_mrr:.{decimals}f}}}" if m_key == "grurec" else f"{b_map:.{decimals}f}" if False else f"{b_mrr:.{decimals}f}"
+        b_mrr_str = f"\\textbf{{{b_mrr:.{decimals}f}}}" if m_key == "grurec" else f"{b_mrr:.{decimals}f}"
         lines.append(f" & Before (w/o POG, Outcome-Aware) & {b_map:.{decimals}f} & {b_ndcg:.{decimals}f} & {b_mrr_str} \\\\")
 
         # 3. After (with POG, Outcome-Aware)
@@ -358,7 +368,7 @@ def generate_pass_table(
 
 
 # ==============================================================================
-# 3. TABLA FAIL (ESTUDIANTES QUE SUSPENDEN)
+# 3. FAIL TABLE (FAILING STUDENTS)
 # ==============================================================================
 def generate_fail_table(
     df_users: pd.DataFrame,
@@ -437,61 +447,61 @@ def generate_fail_table(
 # ==============================================================================
 def main():
     parser = argparse.ArgumentParser(
-        description="Genera las tablas LaTeX de TUNING (Taguchi), PASS (Métricas de Recomendación) y FAIL (Métricas de Trayectoria/Intervención)."
+        description="Generate LaTeX tables for TUNING (Taguchi), PASS (Recommendation Metrics), and FAIL (Trajectory/Intervention Metrics)."
     )
     parser.add_argument(
         "-i", "--input",
         type=str,
         default=None,
-        help="Ruta al archivo CSV o JSON consolidado de métricas por usuario (default: busca en results/)"
+        help="Path to consolidated CSV or JSON user metrics file (default: searches in results/)"
     )
     parser.add_argument(
         "--results-dir",
         type=str,
         default="results",
-        help="Directorio base de resultados (default: results)"
+        help="Base results directory (default: results)"
     )
     parser.add_argument(
         "--tuning-dir",
         type=str,
         default="results/tuning",
-        help="Directorio con los CSVs de Taguchi (default: results/tuning)"
+        help="Directory with Taguchi CSVs (default: results/tuning)"
     )
     parser.add_argument(
         "--ablation-file",
         type=str,
         default="results/ablation/ablation_1_outcome_aware_filtering.csv",
-        help="Ruta al CSV de ablación outcome-aware para la línea base Naive (default: results/ablation/ablation_1_outcome_aware_filtering.csv)"
+        help="Path to outcome-aware ablation CSV for Naive baseline (default: results/ablation/ablation_1_outcome_aware_filtering.csv)"
     )
     parser.add_argument(
         "-d", "--decimals",
         type=int,
         default=4,
-        help="Número de decimales para las métricas numéricas (default: 4)"
+        help="Number of decimal places for numeric metrics (default: 4)"
     )
     parser.add_argument(
         "--table",
         choices=["all", "tuning", "pass", "fail"],
         default="all",
-        help="Tabla(s) a generar: all, tuning, pass o fail (default: all)"
+        help="Table(s) to generate: all, tuning, pass, or fail (default: all)"
     )
     parser.add_argument(
         "--pass-format",
         choices=["stacked", "wide"],
         default="stacked",
-        help="Formato de la tabla PASS: 'stacked' (vertical con líneas base y w/o OA, default) o 'wide' (columnas w/o OA, Before, POG)"
+        help="Format of PASS table: 'stacked' (vertical with baselines and w/o OA, default) or 'wide' (columns w/o OA, Before, POG)"
     )
     parser.add_argument(
         "--output-dir",
         type=str,
         default="tables",
-        help="Directorio donde guardar los archivos .tex separados (default: tables)"
+        help="Directory to save separated .tex files (default: tables)"
     )
     parser.add_argument(
         "--no-save",
         action="store_true",
         default=False,
-        help="No guardar los archivos en disco, solo imprimir por terminal"
+        help="Do not save files to disk, print to terminal only"
     )
 
     args = parser.parse_args()
@@ -507,7 +517,7 @@ def main():
 
     saved_files = []
 
-    # Generar tabla TUNING
+    # Generate TUNING table
     if args.table in ["all", "tuning"]:
         if tuning_dir.exists():
             tuning_latex = generate_tuning_table(tuning_dir)
@@ -521,14 +531,14 @@ def main():
                 file_tuning.write_text(tuning_latex + "\n", encoding="utf-8")
                 saved_files.append(file_tuning)
         else:
-            print(f"Error: No se encontró el directorio de tuning '{tuning_dir}'", file=sys.stderr)
+            print(f"Error: Tuning directory '{tuning_dir}' not found", file=sys.stderr)
 
-    # Cargar métricas de usuario si se requiere PASS o FAIL
+    # Load user metrics if PASS or FAIL is requested
     if args.table in ["all", "pass", "fail"]:
         try:
             df_users = load_user_metrics(results_dir, input_file)
         except Exception as e:
-            print(f"Error cargando métricas de usuarios: {e}", file=sys.stderr)
+            print(f"Error loading user metrics: {e}", file=sys.stderr)
             sys.exit(1)
 
         base_vals = load_base_values(ablation_file)
@@ -562,7 +572,7 @@ def main():
                 saved_files.append(file_fail)
 
     if saved_files:
-        print(f"\n[OK] Tablas LaTeX guardadas exitosamente en la carpeta '{args.output_dir}':", file=sys.stderr)
+        print(f"\n[OK] LaTeX tables successfully saved to directory '{args.output_dir}':", file=sys.stderr)
         for sf in saved_files:
             print(f"  -> {sf}", file=sys.stderr)
 

@@ -13,12 +13,12 @@ from seq_emb.experiments.kfold_runner import KFoldRunner
 
 
 BENCHMARK_CONFIGS = [
-    ("caser_pog", "caser", True, "Caser (con POG)"),
-    ("caser_nopog", "caser", False, "Caser (sin POG)"),
-    ("grurec_pog", "grurec", True, "GRU4Rec (con POG)"),
-    ("grurec_nopog", "grurec", False, "GRU4Rec (sin POG)"),
-    ("sasrec_pog", "sasrec", True, "SASRec (con POG)"),
-    ("sasrec_nopog", "sasrec", False, "SASRec (sin POG)"),
+    ("caser_pog", "caser", True, "Caser (with POG)"),
+    ("caser_nopog", "caser", False, "Caser (without POG)"),
+    ("grurec_pog", "grurec", True, "GRU4Rec (with POG)"),
+    ("grurec_nopog", "grurec", False, "GRU4Rec (without POG)"),
+    ("sasrec_pog", "sasrec", True, "SASRec (with POG)"),
+    ("sasrec_nopog", "sasrec", False, "SASRec (without POG)"),
 ]
 
 
@@ -58,18 +58,18 @@ def main():
     configs_to_run = [c for c in BENCHMARK_CONFIGS if c[2] is True] if args.pog_only else BENCHMARK_CONFIGS
 
     print("\n" + "=" * 110)
-    mode_suite = "MODELOS CON POG (CASER, GRU4REC, SASREC)" if args.pog_only else "BENCHMARK COMPLETO (6 MODELOS)"
-    print(f"INICIANDO {mode_suite}")
-    print(f"Estrategia: {args.strategy.upper()} | Semilla: {seed} | Épocas: {epochs} | Batch: {batch_size} | Dispositivo: {runner.device} | Modo Ventana Local: {args.local_window}")
+    mode_suite = "MODELS WITH POG (CASER, GRU4REC, SASREC)" if args.pog_only else "FULL BENCHMARK (6 MODELS)"
+    print(f"STARTING {mode_suite}")
+    print(f"Strategy: {args.strategy.upper()} | Seed: {seed} | Epochs: {epochs} | Batch: {batch_size} | Device: {runner.device} | Local Window Mode: {args.local_window}")
     if args.config and Path(args.config).exists():
-        print(f"Configuración cargada desde: {args.config}")
+        print(f"Configuration loaded from: {args.config}")
     print("=" * 110 + "\n")
 
     for key, model_name, use_pog, label in configs_to_run:
-        print(f"\n>>> Ejecutando {label} ({args.strategy.upper()})...")
+        print(f"\n>>> Running {label} ({args.strategy.upper()})...")
         model_custom_params = models_cfg.get(model_name, None)
         if model_custom_params:
-            print(f"    Hiperparámetros ({model_name}): {model_custom_params}")
+            print(f"    Hyperparameters ({model_name}): {model_custom_params}")
         try:
             res = runner.run(
                 model_name=model_name,
@@ -89,14 +89,14 @@ def main():
             m = res["mean"]
             print(f"    MAP: {m['mean_map']:.4f} | NDCG: {m['mean_ndcg']:.4f} | HR: {m['mean_hr']:.2f} | Coverage: {m['mean_coverage_ratio']:+.4f} | AllowedEdges: {m['mean_frac_allowed_edges']:+.4f}")
         except Exception as e:
-            print(f"    ERROR en {label}: {e}")
+            print(f"    ERROR in {label}: {e}")
             all_results[key] = {"error": str(e), "label": label}
 
     # Print summary table
     print("\n\n" + "=" * 115)
-    print("RESUMEN COMPARATIVO DE RESULTADOS")
+    print("COMPARATIVE RESULTS SUMMARY")
     print("=" * 115)
-    header = f"{'Modelo':<22} | {'MAP':<7} {'NDCG':<7} {'HR':<5} {'MRR':<7} | {'Coverage':<8} {'Backward':<9} {'Repeat':<8} {'Progress':<9} {'FracAllowed':<11} {'Novelty':<8}"
+    header = f"{'Model':<22} | {'MAP':<7} {'NDCG':<7} {'HR':<5} {'MRR':<7} | {'Coverage':<8} {'Backward':<9} {'Repeat':<8} {'Progress':<9} {'FracAllowed':<11} {'Novelty':<8}"
     print(header)
     print("-" * 115)
 
@@ -118,7 +118,7 @@ def main():
                 f"{m.get('mean_novelty', 0):+.4f}"
             )
         else:
-            print(f"{label:<22} | ERROR: {res.get('error', 'desconocido')}")
+            print(f"{label:<22} | ERROR: {res.get('error', 'unknown')}")
     print("-" * 115)
 
     # Save output
@@ -126,7 +126,7 @@ def main():
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(all_results, f, indent=4)
-    print(f"\nResultados guardados exitosamente en: {output_file}")
+    print(f"\nResults successfully saved to: {output_file}")
 
     # Export user-level metrics across all methods for detailed statistical analysis
     import pandas as pd
@@ -147,7 +147,7 @@ def main():
         df_users = pd.DataFrame(all_user_rows)
         users_csv = output_file.with_name(output_file.stem + "_user_level.csv")
         df_users.to_csv(users_csv, index=False)
-        print(f"Métricas individuales por usuario ({len(df_users)} filas) guardadas en:\n  -> {users_csv}\n")
+        print(f"Individual user-level metrics ({len(df_users)} rows) saved to:\n  -> {users_csv}\n")
 
     # Consolidate model checkpoints into all_models.pt
     if args.save_checkpoints:
@@ -162,7 +162,7 @@ def main():
         if all_models_dict:
             consolidated_pt = chk_dir / "all_models.pt"
             torch.save(all_models_dict, consolidated_pt)
-            print(f"Modelos consolidados ({len(all_models_dict)} variantes) guardados exitosamente en:\n  -> {consolidated_pt}\n")
+            print(f"Consolidated models ({len(all_models_dict)} variants) successfully saved to:\n  -> {consolidated_pt}\n")
 
 
 if __name__ == "__main__":

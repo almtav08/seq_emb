@@ -56,11 +56,11 @@ def main():
 
     for current_model in models_to_run:
         model_custom_params = models_cfg.get(current_model, None)
-        mode_label = "Con POG" if args.pog else "Sin POG"
+        mode_label = "With POG" if args.pog else "Without POG"
         print(f"\n{'='*60}")
-        print(f"Modelo: {current_model.upper()} ({mode_label}) | Estrategia: {args.strategy.upper()} | Seed: {seed} | Epochs: {epochs} | Batch: {batch_size}")
+        print(f"Model: {current_model.upper()} ({mode_label}) | Strategy: {args.strategy.upper()} | Seed: {seed} | Epochs: {epochs} | Batch: {batch_size}")
         if model_custom_params:
-            print(f"Hiperparámetros óptimos ({current_model}): {model_custom_params}")
+            print(f"Optimal hyperparameters ({current_model}): {model_custom_params}")
         print(f"{'='*60}\n")
 
         results = runner.run(
@@ -77,8 +77,8 @@ def main():
             checkpoints_dir=args.checkpoints_dir,
         )
 
-        strat_label = f"LOOCV ({results.get('n_students', 48)} Iteraciones)" if args.strategy == "loocv" else f"{splits} Folds"
-        print(f"\nResultados Promedio ({strat_label}) - {current_model.upper()}:")
+        strat_label = f"LOOCV ({results.get('n_students', 48)} Iterations)" if args.strategy == "loocv" else f"{splits} Folds"
+        print(f"\nAverage Results ({strat_label}) - {current_model.upper()}:")
         print("-" * 50)
         for metric, val in results["mean"].items():
             std_val = results["std"].get(metric, 0.0)
@@ -91,7 +91,7 @@ def main():
             out_path.parent.mkdir(parents=True, exist_ok=True)
             with open(out_path, "w", encoding="utf-8") as f:
                 json.dump(results, f, indent=4)
-            print(f"\nResultados guardados en: {out_path}")
+            print(f"\nResults saved to: {out_path}")
             csv_path = out_path.with_suffix(".csv")
         else:
             csv_path = project_root / "results" / f"user_metrics_{current_model}_{'pog' if args.pog else 'nopog'}_{args.strategy}.csv"
@@ -104,7 +104,7 @@ def main():
             df_u.insert(1, "use_pog", args.pog)
             df_u.insert(2, "strategy", args.strategy)
             df_u.to_csv(csv_path, index=False)
-            print(f"Métricas individuales por usuario ({len(df_u)} usuarios) guardadas en:\n  -> {csv_path}\n")
+            print(f"Individual user-level metrics ({len(df_u)} users) saved to:\n  -> {csv_path}\n")
 
 
 if __name__ == "__main__":
