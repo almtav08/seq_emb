@@ -1,11 +1,11 @@
-# Sequential Recommendation with Learning Paths and Pedagogical Ontology Graphs (seq_emb)
+# Sequential Recommendation with Learning Paths and Partially Ordered Graphs (seq_emb)
 
 This project implements and evaluates sequential recommendation models for pedagogical resources along student learning paths.
 
 ## Supported Models
 
 Each architecture supports two input modalities:
-1. **With POG (*Pedagogical Ontology Graph*)**: Initializes item representations using continuous embeddings pre-trained with **RotatE** over the curricular prerequisite and remedial graph.
+1. **With POG (*Partially Ordered Graph*)**: Initializes item representations using continuous embeddings pre-trained with **RotatE** over the curricular prerequisite and remedial graph.
 2. **Without POG (*noembed*)**: Learns item representations end-to-end using an `nn.Embedding` layer.
 
 Sequential architectures:

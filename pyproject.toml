@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "seq_emb"
 version = "0.1.0"
-description = "Sequential Recommendation for Learning Paths with Pedagogical Ontology Graphs (POG) and Contrastive Learning"
+description = "Sequential Recommendation for Learning Paths with Partially Ordered Graphs (POG) and Contrastive Learning"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
